@@ -7,9 +7,14 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Release version (e.g. 1.0.0)'
+        description: 'Release version (e.g. 1.0.3)'
         required: true
-        default: '1.0.0'
+        default: '1.0.3'
+      description:
+        description: 'Release notes / Описание релиза (markdown, опционально)'
+        required: false
+        type: string
+        default: ''
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -234,6 +239,7 @@ jobs:
         with:
           tag_name: ${{ steps.release_info.outputs.tag }}
           name: "Release ${{ steps.release_info.outputs.tag }}"
+          body: ${{ github.event.inputs.description }}
           files: release-assets/*
           generate_release_notes: true
           draft: false
