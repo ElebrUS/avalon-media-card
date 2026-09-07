@@ -31,6 +31,7 @@ val SduiClientSerializersModule = SerializersModule {
         subclass(CreateCustomListCommand::class, CreateCustomListCommand.serializer())
         subclass(MarkSeasonWatchedCommand::class, MarkSeasonWatchedCommand.serializer())
         subclass(SelectSeasonCommand::class, SelectSeasonCommand.serializer())
+        subclass(MarkNotificationsReadCommand::class, MarkNotificationsReadCommand.serializer())
     }
 
     polymorphic(ServerAction::class) {
@@ -52,6 +53,7 @@ val SduiClientSerializersModule = SerializersModule {
         subclass(CreateCustomListCommand::class, CreateCustomListCommand.serializer())
         subclass(MarkSeasonWatchedCommand::class, MarkSeasonWatchedCommand.serializer())
         subclass(SelectSeasonCommand::class, SelectSeasonCommand.serializer())
+        subclass(MarkNotificationsReadCommand::class, MarkNotificationsReadCommand.serializer())
     }
 
     // Register a custom top-level serializer for sending ServerActions via kRPC

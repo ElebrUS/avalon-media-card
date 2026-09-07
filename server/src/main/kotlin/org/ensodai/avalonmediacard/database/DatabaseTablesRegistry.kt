@@ -25,6 +25,7 @@ val AllDatabaseTables: Array<Table> = arrayOf(
     UserClickstreamTable,
     UserCustomListItemTable,
     UserCustomListTable,
+    UserEpisodeNotificationTable,
     UserEpisodeTable,
     UserExternalAuthTable,
     UserFeedSectionCacheTable,

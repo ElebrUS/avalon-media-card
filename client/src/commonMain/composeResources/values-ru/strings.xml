@@ -365,4 +365,60 @@
     <string name="person_filmography">Фильмография</string>
     <string name="details_season_format">Сезон %1$d</string>
     <string name="details_episode_format">Эпизод %1$d</string>
+
+    <!-- Episodes Notifications Screen -->
+    <string name="episodes_notifications_title">Новые серии</string>
+    <string name="episodes_notifications_subtitle">Свежие эпизоды отслеживаемых сериалов</string>
+    <string name="episodes_notifications_mark_all_read">Отметить все прочитанными</string>
+    <string name="episodes_notifications_filter_all">Все</string>
+    <string name="episodes_notifications_filter_recent">За 7 дней</string>
+    <string name="episodes_notifications_filter_unwatched">Непросмотренные</string>
+    <string name="episodes_notifications_today">Сегодня</string>
+    <string name="episodes_notifications_this_week">На этой неделе</string>
+    <string name="episodes_notifications_earlier">Ранее в этом месяце</string>
+    <string name="episodes_notifications_missed_title">Вы пропустили</string>
+    <string name="episodes_notifications_badge_new">NEW</string>
+    <string name="episodes_notifications_watch_episode">Смотреть</string>
+    <string name="episodes_notifications_mark_watched">Просмотрено</string>
+    <string name="episodes_notifications_about_show">О сериале</string>
+    <string name="episodes_notifications_empty_title">Все серии просмотрены!</string>
+    <string name="episodes_notifications_empty_desc">Вы не пропустили ни одной новой серии. Как только выйдет продолжение ваших сериалов, оно появится здесь.</string>
+    <string name="episodes_notifications_go_to_tv_shows">Каталог сериалов</string>
+    <string name="episodes_notifications_rollup_subtitle">Вы остановились на S%1$dE%2$d</string>
+    <string name="episodes_notifications_rollup_start">Начать с S%1$dE%2$d</string>
+    <string name="episodes_notifications_episode_fallback">Серия %1$s</string>
+    <string name="episodes_notifications_season_prefix">Сезон %1$d · </string>
+    <string name="episodes_notifications_seasons_prefix">Сезоны %1$s · </string>
+    <string name="episodes_notifications_episodes_count_1">%1$d серия</string>
+    <string name="episodes_notifications_episodes_count_few">%1$d серии</string>
+    <string name="episodes_notifications_episodes_count_many">%1$d серий</string>
+    <string name="episodes_notifications_new_count">+%1$d новых</string>
+    <string name="episodes_notifications_to_show">К сериалу</string>
+    <string name="episodes_notifications_badge_movie_new">NEW • ФИЛЬМ</string>
+    <string name="episodes_notifications_badge_movie">ФИЛЬМ</string>
+    <string name="episodes_notifications_movie_premiere">Премьера фильма</string>
+    <string name="episodes_notifications_about_movie">О фильме</string>
+    <string name="episodes_notifications_rollup_info">Вышло %1$d новых серий (с S%2$dE%3$d по S%4$dE%5$d)</string>
+
+    <!-- Months (Short) -->
+    <string name="month_jan_short">янв.</string>
+    <string name="month_feb_short">февр.</string>
+    <string name="month_mar_short">марта</string>
+    <string name="month_apr_short">апр.</string>
+    <string name="month_may_short">мая</string>
+    <string name="month_jun_short">июня</string>
+    <string name="month_jul_short">июля</string>
+    <string name="month_aug_short">авг.</string>
+    <string name="month_sep_short">сент.</string>
+    <string name="month_oct_short">окт.</string>
+    <string name="month_nov_short">нояб.</string>
+    <string name="month_dec_short">дек.</string>
+
+    <!-- Episode Details Dialog -->
+    <string name="episodes_dialog_watch_episode">Смотреть серию</string>
+    <string name="episodes_dialog_close">Закрыть</string>
+    <string name="episodes_dialog_season_episode">Сезон %1$d • Серия %2$d</string>
+    <string name="episodes_dialog_episode_prefix">Серия %1$d</string>
+    <string name="episodes_dialog_watched">Просмотрено</string>
+    <string name="episodes_dialog_mark_watched">Отметить</string>
 </resources>

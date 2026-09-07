@@ -7,8 +7,14 @@ import org.ensodai.avalonmediacard.contract.model.KeywordMetadata
 import org.ensodai.avalonmediacard.contract.model.MediaMetadata
 import org.ensodai.avalonmediacard.contract.model.ProductionCompanyMetadata
 import org.ensodai.avalonmediacard.contract.plugins.GenreDictionaryProvider
+import org.ensodai.avalonmediacard.contract.slot.EpisodeItem
 import org.ensodai.avalonmediacard.database.AllDatabaseTables
+import org.ensodai.avalonmediacard.database.MediaEpisodeTable
+import org.ensodai.avalonmediacard.database.UserEpisodeTable
+import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.jdbc.Database
+import org.jetbrains.exposed.v1.jdbc.insert
+import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import org.jetbrains.exposed.v1.migration.jdbc.MigrationUtils
 import kotlin.test.AfterTest
@@ -18,6 +24,8 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
+import kotlin.time.Clock
+import kotlin.uuid.Uuid
 
 class MediaRepositoryTest {
 
@@ -194,5 +202,104 @@ class MediaRepositoryTest {
         assertNotNull(healed)
         assertEquals(AnimeSubType.JAPANESE_ANIME, healed.animeSubType)
         assertTrue(healed.isAnime)
+    }
+
+    @Test
+    fun testSafeUpsertSeasonDetailsPreservesUserEpisodeProgressAndUpdatesTitles() = runBlocking {
+        // 1. Создаем метаданные сериала (Silo)
+        repository.upsertMetadata(
+            catalogId = "tmdb",
+            externalId = "94997",
+            mediaType = "tv",
+            metadata = MediaMetadata(title = "Укрытие (Silo)"),
+            language = "ru"
+        )
+
+        // 2. Первоначальный кэш с заглушкой TMDB "Эпизод 2"
+        val initialEpisodes = listOf(
+            EpisodeItem(
+                id = "1",
+                episodeNumber = 1,
+                name = "Инженер",
+                airDate = "2026-09-01",
+                overview = null,
+                stillUrl = null,
+                voteAverage = null,
+                runtime = null
+            ),
+            EpisodeItem(
+                id = "2",
+                episodeNumber = 2,
+                name = "Эпизод 2",
+                airDate = "2026-09-08",
+                overview = null,
+                stillUrl = null,
+                voteAverage = null,
+                runtime = null
+            )
+        )
+        repository.upsertSeasonDetails("tmdb", "94997", "ru", 1, initialEpisodes)
+
+        val cachedInitial = repository.getSeasonDetails("tmdb", "94997", "ru", 1)
+        assertNotNull(cachedInitial)
+        assertEquals(2, cachedInitial.episodes.size)
+        assertEquals("Эпизод 2", cachedInitial.episodes[1].name)
+        val initialEpisode2Id = cachedInitial.episodes[1].id
+
+        // 3. Пользователь посмотрел 1200 секунд второй серии и отметил ее просмотренной
+        val testUserId = Uuid.random()
+        val parsedEpId = Uuid.parse(initialEpisode2Id)
+        transaction {
+            UserEpisodeTable.insert {
+                it[this.userId] = testUserId
+                it[this.episodeId] = parsedEpId
+                it[this.progressSeconds] = 1200
+                it[this.durationSeconds] = 3000
+                it[this.isWatched] = true
+                it[this.lastWatchedAt] = Clock.System.now()
+            }
+        }
+
+        // 4. Повторный upsert с актуальным переводом с TMDB ("Серая слизь")
+        val updatedEpisodes = listOf(
+            EpisodeItem(
+                id = "1",
+                episodeNumber = 1,
+                name = "Инженер",
+                airDate = "2026-09-01",
+                overview = null,
+                stillUrl = null,
+                voteAverage = null,
+                runtime = null
+            ),
+            EpisodeItem(
+                id = "2",
+                episodeNumber = 2,
+                name = "Серая слизь",
+                airDate = "2026-09-08",
+                overview = null,
+                stillUrl = null,
+                voteAverage = null,
+                runtime = null
+            )
+        )
+        repository.upsertSeasonDetails("tmdb", "94997", "ru", 1, updatedEpisodes)
+
+        // 5. Проверяем, что название обновилось, ID серии НЕ изменился, а прогресс пользователя сохранился!
+        val cachedUpdated = repository.getSeasonDetails("tmdb", "94997", "ru", 1)
+        assertNotNull(cachedUpdated)
+        assertEquals(2, cachedUpdated.episodes.size)
+        assertEquals("Серая слизь", cachedUpdated.episodes[1].name)
+        assertEquals(initialEpisode2Id, cachedUpdated.episodes[1].id, "ID серии обязан сохраниться (in-place upsert)")
+
+        // Проверяем запись в таблице user_episodes
+        val userProgressRow = transaction {
+            UserEpisodeTable.selectAll().where {
+                UserEpisodeTable.userId eq testUserId
+            }.firstOrNull()
+        }
+        assertNotNull(userProgressRow, "Запись прогресса пользователя НЕ должна быть удалена каскадом!")
+        assertEquals(1200L, userProgressRow[UserEpisodeTable.progressSeconds])
+        assertTrue(userProgressRow[UserEpisodeTable.isWatched])
     }
 }

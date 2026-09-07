@@ -365,4 +365,60 @@
     <string name="person_filmography">Filmography</string>
     <string name="details_season_format">Season %1$d</string>
     <string name="details_episode_format">Episode %1$d</string>
+
+    <!-- Episodes Notifications Screen -->
+    <string name="episodes_notifications_title">New Episodes</string>
+    <string name="episodes_notifications_subtitle">Fresh episodes from your watchlist</string>
+    <string name="episodes_notifications_mark_all_read">Mark all as read</string>
+    <string name="episodes_notifications_filter_all">All</string>
+    <string name="episodes_notifications_filter_recent">Past 7 days</string>
+    <string name="episodes_notifications_filter_unwatched">Unwatched</string>
+    <string name="episodes_notifications_today">Today</string>
+    <string name="episodes_notifications_this_week">This Week</string>
+    <string name="episodes_notifications_earlier">Earlier This Month</string>
+    <string name="episodes_notifications_missed_title">You Missed</string>
+    <string name="episodes_notifications_badge_new">NEW</string>
+    <string name="episodes_notifications_watch_episode">Watch</string>
+    <string name="episodes_notifications_mark_watched">Watched</string>
+    <string name="episodes_notifications_about_show">About show</string>
+    <string name="episodes_notifications_empty_title">All Caught Up!</string>
+    <string name="episodes_notifications_empty_desc">You haven\'t missed any new episodes. Fresh releases will appear here as they air.</string>
+    <string name="episodes_notifications_go_to_tv_shows">Browse TV Shows</string>
+    <string name="episodes_notifications_rollup_subtitle">You stopped at S%1$dE%2$d</string>
+    <string name="episodes_notifications_rollup_start">Start from S%1$dE%2$d</string>
+    <string name="episodes_notifications_episode_fallback">Episode %1$s</string>
+    <string name="episodes_notifications_season_prefix">Season %1$d · </string>
+    <string name="episodes_notifications_seasons_prefix">Seasons %1$s · </string>
+    <string name="episodes_notifications_episodes_count_1">%1$d episode</string>
+    <string name="episodes_notifications_episodes_count_few">%1$d episodes</string>
+    <string name="episodes_notifications_episodes_count_many">%1$d episodes</string>
+    <string name="episodes_notifications_new_count">+%1$d new</string>
+    <string name="episodes_notifications_to_show">To show</string>
+    <string name="episodes_notifications_badge_movie_new">NEW • MOVIE</string>
+    <string name="episodes_notifications_badge_movie">MOVIE</string>
+    <string name="episodes_notifications_movie_premiere">Movie Premiere</string>
+    <string name="episodes_notifications_about_movie">About movie</string>
+    <string name="episodes_notifications_rollup_info">%1$d new episodes (from S%2$dE%3$d to S%4$dE%5$d)</string>
+
+    <!-- Months (Short) -->
+    <string name="month_jan_short">Jan</string>
+    <string name="month_feb_short">Feb</string>
+    <string name="month_mar_short">Mar</string>
+    <string name="month_apr_short">Apr</string>
+    <string name="month_may_short">May</string>
+    <string name="month_jun_short">Jun</string>
+    <string name="month_jul_short">Jul</string>
+    <string name="month_aug_short">Aug</string>
+    <string name="month_sep_short">Sep</string>
+    <string name="month_oct_short">Oct</string>
+    <string name="month_nov_short">Nov</string>
+    <string name="month_dec_short">Dec</string>
+
+    <!-- Episode Details Dialog -->
+    <string name="episodes_dialog_watch_episode">Watch Episode</string>
+    <string name="episodes_dialog_close">Close</string>
+    <string name="episodes_dialog_season_episode">Season %1$d • Episode %2$d</string>
+    <string name="episodes_dialog_episode_prefix">Episode %1$d</string>
+    <string name="episodes_dialog_watched">Watched</string>
+    <string name="episodes_dialog_mark_watched">Mark as watched</string>
 </resources>

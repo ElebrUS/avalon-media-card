@@ -32,6 +32,7 @@ class AppActionHandler(
                     is Screen.Search -> navigation.navigateToSearch(screen.initialQuery)
                     is Screen.Admin -> navigation.navigateToAdmin()
                     is Screen.Settings -> navigation.navigateToSettings()
+                    Screen.EpisodesNotifications -> navigation.navigateToEpisodesNotifications()
                 }
             }
 

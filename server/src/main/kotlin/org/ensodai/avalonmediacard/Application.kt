@@ -37,6 +37,7 @@ import org.ensodai.avalonmediacard.routes.streamProxyRoutes
 import org.ensodai.avalonmediacard.rpc.*
 import org.ensodai.avalonmediacard.security.RpcSessionContext
 import org.ensodai.avalonmediacard.security.StreamTokenService
+import org.ensodai.avalonmediacard.sync.EpisodeNotificationSyncWorker
 import org.ensodai.avalonmediacard.sync.SyncWorker
 import org.ensodai.avalonmediacard.tmdb.MediaKeywordsEnrichmentWorker
 import org.ensodai.avalonmediacard.utils.EnvHelper
@@ -72,6 +73,7 @@ fun Application.module() {
     val pluginManager by inject<PluginManager>()
     val syncWorker by inject<SyncWorker>()
     val keywordsWorker by inject<MediaKeywordsEnrichmentWorker>()
+    val episodeNotificationSyncWorker by inject<EpisodeNotificationSyncWorker>()
     val streamTokenService by inject<StreamTokenService>()
     val safeProxyHttpClient by inject<HttpClient>(named("safeProxyHttpClient"))
 
@@ -183,9 +185,11 @@ fun Application.module() {
     // Запуск фоновой синхронизации
     syncWorker.start()
     keywordsWorker.start()
+    episodeNotificationSyncWorker.start()
     monitor.subscribe(ApplicationStopped) {
         syncWorker.stop()
         keywordsWorker.stop()
+        episodeNotificationSyncWorker.stop()
         pluginManager.destroyAll()
         DatabaseFactory.close()
     }

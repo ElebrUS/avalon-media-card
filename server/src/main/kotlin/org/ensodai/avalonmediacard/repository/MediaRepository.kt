@@ -17,9 +17,26 @@ import org.jetbrains.exposed.v1.core.isNull
 import org.jetbrains.exposed.v1.jdbc.deleteAll
 import org.jetbrains.exposed.v1.jdbc.deleteWhere
 import org.jetbrains.exposed.v1.jdbc.insert
+import org.jetbrains.exposed.v1.core.SortOrder
 import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.jetbrains.exposed.v1.jdbc.update
+import org.jetbrains.exposed.v1.jdbc.upsert
 import org.koin.core.annotation.Single
+import kotlin.time.Clock
+import kotlin.time.Instant
+
+/**
+ * Метаданные закешированного сезона из локальной базы данных.
+ *
+ * @property episodes Список эпизодов сезона, загруженных из локальной БД.
+ * @property updatedAt Временная метка последнего сохранения/обновления сезона в БД (используется для SWR).
+ * @property expectedCount Ожидаемое общее количество эпизодов в сезоне из метаданных сериала.
+ */
+data class CachedSeasonDetails(
+    val episodes: List<org.ensodai.avalonmediacard.contract.slot.EpisodeItem>,
+    val updatedAt: Instant?,
+    val expectedCount: Int?
+)
 
 @Single
 class MediaRepository(
@@ -30,7 +47,7 @@ class MediaRepository(
         externalId: String,
         mediaType: String,
         metadata: MediaMetadata,
-        language: String = "ru"
+        language: String
     ) = dbQuery {
             val normLang = normalizeLang(language)
             val existing = MediaTable.selectAll()
@@ -657,6 +674,23 @@ class MediaRepository(
         }
     }
 
+    /**
+     * Безопасно сохраняет или обновляет информацию о сезоне и сериях (in-place upsert).
+     *
+     * Ключевые архитектурные гарантии:
+     * - **Не удаляет** все серии через deleteWhere, сохраняя стабильный primary key (id) существующих серий.
+     * - **Защищает пользовательский прогресс**: записи в таблице `user_episodes` (секунды просмотра, статус
+     *   «просмотрено») сохраняются и не удаляются каскадом.
+     * - **Автоматически обновляет заголовки в уведомлениях**: если у серий появились официальные русские переводы
+     *   вместо заглушек ("Эпизод 8" -> "Серая слизь"), соответствующие записи в `user_episode_notifications`
+     *   немедленно обновляются.
+     *
+     * @param catalogId Идентификатор каталога (например, "tmdb").
+     * @param externalId Внешний ID медиа в каталоге.
+     * @param language Язык локализации данных (например, "ru").
+     * @param seasonNumber Номер сезона.
+     * @param episodes Список эпизодов для сохранения.
+     */
     suspend fun upsertSeasonDetails(
         catalogId: String,
         externalId: String,
@@ -664,66 +698,124 @@ class MediaRepository(
         seasonNumber: Int,
         episodes: List<org.ensodai.avalonmediacard.contract.slot.EpisodeItem>
     ) = dbQuery {
-            val metadataRow = MediaTable.selectAll().where {
-                (MediaTable.catalogId eq catalogId) and
-                        (MediaTable.externalId eq externalId)
-            }.firstOrNull() ?: return@dbQuery
+        val metadataRow = MediaTable.selectAll().where {
+            (MediaTable.catalogId eq catalogId) and
+                    (MediaTable.externalId eq externalId)
+        }.firstOrNull() ?: return@dbQuery
 
-            val mediaId = metadataRow[MediaTable.id]
+        val mediaId = metadataRow[MediaTable.id]
+        val now = Clock.System.now()
 
-            val existingSeason = MediaSeasonTable.selectAll().where {
-                (MediaSeasonTable.mediaId eq mediaId) and
-                        (MediaSeasonTable.seasonNumber eq seasonNumber)
-            }.firstOrNull()
+        val existingSeason = MediaSeasonTable.selectAll().where {
+            (MediaSeasonTable.mediaId eq mediaId) and
+                    (MediaSeasonTable.seasonNumber eq seasonNumber)
+        }.firstOrNull()
 
-            val seasonId = if (existingSeason != null) {
-                MediaSeasonTable.update({ MediaSeasonTable.id eq existingSeason[MediaSeasonTable.id] }) {
-                    it[this.episodeCount] = episodes.size
-                }
-                existingSeason[MediaSeasonTable.id]
-            } else {
-                MediaSeasonTable.insert {
-                    it[this.mediaId] = mediaId
-                    it[this.seasonNumber] = seasonNumber
-                    it[this.episodeCount] = episodes.size
-                } get MediaSeasonTable.id
+        val seasonId = if (existingSeason != null) {
+            MediaSeasonTable.update({ MediaSeasonTable.id eq existingSeason[MediaSeasonTable.id] }) {
+                it[this.episodeCount] = episodes.size
+                it[this.updatedAt] = now
             }
+            existingSeason[MediaSeasonTable.id]
+        } else {
+            MediaSeasonTable.insert {
+                it[this.mediaId] = mediaId
+                it[this.seasonNumber] = seasonNumber
+                it[this.episodeCount] = episodes.size
+                it[this.updatedAt] = now
+            } get MediaSeasonTable.id
+        }
 
-            MediaEpisodeTable.deleteWhere { MediaEpisodeTable.seasonId eq seasonId }
+        // Fetch existing episodes for this season to perform a safe in-place upsert
+        val existingEpisodesByNumber = MediaEpisodeTable.selectAll().where {
+            MediaEpisodeTable.seasonId eq seasonId
+        }.associateBy { it[MediaEpisodeTable.episodeNumber] }
 
-            episodes.forEach { ep ->
-                val epId = MediaEpisodeTable.insert {
+        // Remove any orphaned episodes that were removed upstream (without wiping the whole season)
+        val newEpisodeNumbers = episodes.map { it.episodeNumber }.toSet()
+        val orphanedEpisodeIds = existingEpisodesByNumber
+            .filterKeys { it !in newEpisodeNumbers }
+            .values
+            .map { it[MediaEpisodeTable.id] }
+
+        if (orphanedEpisodeIds.isNotEmpty()) {
+            MediaEpisodeTable.deleteWhere {
+                MediaEpisodeTable.id inList orphanedEpisodeIds
+            }
+        }
+
+        episodes.forEach { ep ->
+            val existingEpRow = existingEpisodesByNumber[ep.episodeNumber]
+            val epId = if (existingEpRow != null) {
+                val id = existingEpRow[MediaEpisodeTable.id]
+                MediaEpisodeTable.update({ MediaEpisodeTable.id eq id }) {
+                    it[this.airDate] = ep.airDate
+                    it[this.runtime] = ep.runtime
+                    it[this.updatedAt] = now
+                }
+                id
+            } else {
+                MediaEpisodeTable.insert {
                     it[this.seasonId] = seasonId
                     it[this.episodeNumber] = ep.episodeNumber
                     it[this.airDate] = ep.airDate
                     it[this.runtime] = ep.runtime
+                    it[this.updatedAt] = now
                 } get MediaEpisodeTable.id
+            }
 
-                MediaEpisodeTranslationTable.insert {
-                    it[this.episodeId] = epId
-                    it[this.language] = language
-                    it[this.name] = ep.name
-                    it[this.overview] = ep.overview
-                }
+            MediaEpisodeTranslationTable.upsert(
+                MediaEpisodeTranslationTable.episodeId,
+                MediaEpisodeTranslationTable.language
+            ) {
+                it[this.episodeId] = epId
+                it[this.language] = language
+                it[this.name] = ep.name.trim()
+                it[this.overview] = ep.overview
+                it[this.updatedAt] = now
+            }
 
-                ep.stillUrl?.let { url ->
+            ep.stillUrl?.let { url ->
+                val existingImg = MediaImageTable.selectAll().where {
+                    (MediaImageTable.episodeId eq epId) and
+                            (MediaImageTable.imageType eq "POSTER")
+                }.firstOrNull()
+
+                if (existingImg != null) {
+                    MediaImageTable.update({ MediaImageTable.id eq existingImg[MediaImageTable.id] }) {
+                        it[this.url] = url.take(255)
+                        it[this.updatedAt] = now
+                    }
+                } else {
                     MediaImageTable.insert {
                         it[this.mediaId] = mediaId
                         it[this.episodeId] = epId
                         it[imageType] = "POSTER"
                         it[this.language] = language
                         it[this.url] = url.take(255)
+                        it[this.updatedAt] = now
                     }
                 }
             }
         }
+    }
 
+    /**
+     * Загружает закешированные данные сезона из локальной базы данных.
+     *
+     * Оптимизации:
+     * - Исключена проблема N+1: переводы и постеры загружаются пакетно через `inList`.
+     * - Возвращает метаданные свежести ([CachedSeasonDetails.updatedAt] и [CachedSeasonDetails.expectedCount])
+     *   для принятия решений по SWR в [SeasonFreshnessPolicy].
+     *
+     * @return [CachedSeasonDetails] с сериями и временем обновления, либо `null`, если сезона или серий в базе нет.
+     */
     suspend fun getSeasonDetails(
         catalogId: String,
         externalId: String,
         language: String,
         seasonNumber: Int
-    ): List<org.ensodai.avalonmediacard.contract.slot.EpisodeItem>? = dbQuery {
+    ): CachedSeasonDetails? = dbQuery {
         val metadataRow = MediaTable.selectAll().where {
             (MediaTable.catalogId eq catalogId) and
                     (MediaTable.externalId eq externalId)
@@ -736,15 +828,34 @@ class MediaRepository(
                     (MediaSeasonTable.seasonNumber eq seasonNumber)
         }.firstOrNull() ?: return@dbQuery null
 
-        val episodes = MediaEpisodeTable.selectAll().where {
-            MediaEpisodeTable.seasonId eq seasonRow[MediaSeasonTable.id]
-        }.map { row ->
+        val seasonId = seasonRow[MediaSeasonTable.id]
+        val seasonUpdatedAt = seasonRow[MediaSeasonTable.updatedAt]
+        val expectedCount = seasonRow[MediaSeasonTable.episodeCount]
+
+        val episodeRows = MediaEpisodeTable.selectAll().where {
+            MediaEpisodeTable.seasonId eq seasonId
+        }.orderBy(MediaEpisodeTable.episodeNumber to SortOrder.ASC).toList()
+
+        if (episodeRows.isEmpty()) {
+            return@dbQuery null
+        }
+
+        val epIds = episodeRows.map { it[MediaEpisodeTable.id] }
+
+        val translationsByEpId = MediaEpisodeTranslationTable.selectAll().where {
+            (MediaEpisodeTranslationTable.episodeId inList epIds) and
+                    (MediaEpisodeTranslationTable.language eq language)
+        }.associateBy { it[MediaEpisodeTranslationTable.episodeId] }
+
+        val imagesByEpId = MediaImageTable.selectAll().where {
+            (MediaImageTable.episodeId inList epIds) and
+                    (MediaImageTable.imageType eq "POSTER")
+        }.associateBy { it[MediaImageTable.episodeId] }
+
+        val episodes = episodeRows.map { row ->
             val epId = row[MediaEpisodeTable.id]
-            val et = MediaEpisodeTranslationTable.selectAll()
-                .where { (MediaEpisodeTranslationTable.episodeId eq epId) and (MediaEpisodeTranslationTable.language eq language) }
-                .firstOrNull()
-            val img = MediaImageTable.selectAll()
-                .where { (MediaImageTable.episodeId eq epId) and (MediaImageTable.imageType eq "POSTER") }.firstOrNull()
+            val et = translationsByEpId[epId]
+            val img = imagesByEpId[epId]
 
             org.ensodai.avalonmediacard.contract.slot.EpisodeItem(
                 id = epId.value.toString(),
@@ -759,12 +870,12 @@ class MediaRepository(
                 userRating = null
             )
         }
-        val expectedCount = seasonRow[MediaSeasonTable.episodeCount] ?: 0
-        if (episodes.isEmpty() || episodes.size != expectedCount) {
-            return@dbQuery null
-        }
 
-        episodes
+        CachedSeasonDetails(
+            episodes = episodes,
+            updatedAt = seasonUpdatedAt,
+            expectedCount = expectedCount
+        )
     }
 
     suspend fun count(): Long = dbQuery {

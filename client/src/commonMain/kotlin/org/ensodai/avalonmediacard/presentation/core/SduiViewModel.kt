@@ -5,6 +5,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import org.ensodai.avalonmediacard.contract.slot.Action
 import org.ensodai.avalonmediacard.contract.slot.ActionResult
 import org.ensodai.avalonmediacard.contract.slot.ServerAction
 
@@ -61,6 +62,7 @@ abstract class SduiViewModel<S : SduiViewState>(
     /**
      * Перехватывает локальные UI экшены (ActionNavigate, ActionPlayVideo и др.).
      * По умолчанию ничего не делает. Переопределяется в конкретных ViewModel.
+     * @return true, если действие было обработано ViewModel локально.
      */
-    open fun handleLocalAction(action: org.ensodai.avalonmediacard.contract.slot.Action) {}
+    open fun handleLocalAction(action: Action): Boolean = false
 }

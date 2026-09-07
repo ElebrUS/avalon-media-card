@@ -56,18 +56,41 @@ class UserEpisodeRepository : UserEpisodeProvider {
                 .where { MediaTable.externalId eq mediaId }
                 .limit(1)
                 .map { it[MediaTable.id].value }
-                .singleOrNull() ?: return@dbQuery
-
-            val episodeId = (MediaEpisodeTable innerJoin MediaSeasonTable)
-                .selectAll()
-                .where {
-                    (MediaSeasonTable.mediaId eq internalMediaId) and
-                            (MediaSeasonTable.seasonNumber eq season) and
-                            (MediaEpisodeTable.episodeNumber eq episode)
+                .singleOrNull() ?: run {
+                    val newId = Uuid.random()
+                    MediaTable.insert {
+                        it[id] = newId
+                        it[this.catalogId] = catalogId.ifEmpty { "tmdb" }
+                        it[this.externalId] = mediaId
+                        it[this.mediaType] = "tv"
+                    }[MediaTable.id].value
                 }
-                .singleOrNull()
-                ?.get(MediaEpisodeTable.id)
-                ?.value ?: return@dbQuery
+
+            val seasonId = MediaSeasonTable.selectAll()
+                .where { (MediaSeasonTable.mediaId eq internalMediaId) and (MediaSeasonTable.seasonNumber eq season) }
+                .limit(1)
+                .map { it[MediaSeasonTable.id].value }
+                .singleOrNull() ?: run {
+                    val newSeasonId = Uuid.random()
+                    MediaSeasonTable.insert {
+                        it[id] = newSeasonId
+                        it[this.mediaId] = internalMediaId
+                        it[seasonNumber] = season
+                    }[MediaSeasonTable.id].value
+                }
+
+            val episodeId = MediaEpisodeTable.selectAll()
+                .where { (MediaEpisodeTable.seasonId eq seasonId) and (MediaEpisodeTable.episodeNumber eq episode) }
+                .limit(1)
+                .map { it[MediaEpisodeTable.id].value }
+                .singleOrNull() ?: run {
+                    val newEpisodeId = Uuid.random()
+                    MediaEpisodeTable.insert {
+                        it[id] = newEpisodeId
+                        it[this.seasonId] = seasonId
+                        it[episodeNumber] = episode
+                    }[MediaEpisodeTable.id].value
+                }
 
             val existing = UserEpisodeTable.selectAll().where {
                 (UserEpisodeTable.userId eq userId) and

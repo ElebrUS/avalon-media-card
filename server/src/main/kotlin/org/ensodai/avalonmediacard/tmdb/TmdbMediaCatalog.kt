@@ -3,6 +3,7 @@ package org.ensodai.avalonmediacard.tmdb
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
@@ -25,10 +26,12 @@ class TmdbMediaCatalog(
     private val repository: TmdbRepository,
     private val mapper: TmdbMetadataMapper,
     private val cacheRepository: MediaRepository,
-    private val discoverCache: MediaDiscoverCacheRepository
+    private val discoverCache: MediaDiscoverCacheRepository,
+    private val freshnessPolicy: SeasonFreshnessPolicy
 ) : MediaCatalog {
     private val catalogScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     private val activeRequests = ConcurrentHashMap<MediaKey, Mutex>()
+    private val inFlightRevalidations = ConcurrentHashMap<String, Job>()
     private val logger = LoggerFactory.getLogger(TmdbMediaCatalog::class.java)
 
     override suspend fun getTrending(page: Int, language: String): List<TmdbMovieDto> {
@@ -245,27 +248,89 @@ class TmdbMediaCatalog(
         return mapper.mapPersonDetails(person)
     }
 
+    /**
+     * Получает список эпизодов сезона с использованием паттерна Stale-While-Revalidate (SWR):
+     *
+     * 1. Загружает локальный кэш из SQLite и оценивает его свежесть через [SeasonFreshnessPolicy].
+     * 2. [FreshnessStatus.FRESH] -> мгновенный возврат локальных данных (0 мс ожидания сети).
+     * 3. [FreshnessStatus.STALE_REVALIDATE] -> мгновенный возврат локальных данных пользователю +
+     *    запуск асинхронного обновления из TMDB в фоне ([revalidateSeasonInBackground]).
+     * 4. [FreshnessStatus.EXPIRED] -> синхронная загрузка из TMDB, сохранение в базу и возврат.
+     *
+     * @param key Ключ медиафайла.
+     * @param seasonNumber Номер сезона.
+     * @param language Язык локализации (по умолчанию "ru").
+     */
     override suspend fun getSeasonDetails(
         key: MediaKey,
         seasonNumber: Int,
         language: String
     ): List<org.ensodai.avalonmediacard.contract.slot.EpisodeItem> {
         val cached = cacheRepository.getSeasonDetails("tmdb", key.id, language, seasonNumber)
-        if (cached != null && cached.isNotEmpty()) {
-            logger.info("getSeasonDetails БД-КЭШ-ХИТ для key=$key, season=$seasonNumber, lang=$language")
-            return cached
+        val status = freshnessPolicy.evaluate(
+            episodes = cached?.episodes,
+            lastUpdatedAt = cached?.updatedAt,
+            expectedEpisodeCount = cached?.expectedCount
+        )
+
+        return when (status) {
+            FreshnessStatus.FRESH -> {
+                logger.info("getSeasonDetails БД-КЭШ-ХИТ (FRESH) для key=$key, season=$seasonNumber, lang=$language")
+                cached?.episodes.orEmpty()
+            }
+            FreshnessStatus.STALE_REVALIDATE -> {
+                logger.info("getSeasonDetails БД-КЭШ-ХИТ (STALE_REVALIDATE) для key=$key, season=$seasonNumber, lang=$language - запуск фоновой ревалидации")
+                revalidateSeasonInBackground(key, seasonNumber, language)
+                cached?.episodes.orEmpty()
+            }
+            FreshnessStatus.EXPIRED -> {
+                logger.info("getSeasonDetails КЭШ-МИСС/EXPIRED для key=$key, season=$seasonNumber, lang=$language - синхронная загрузка")
+                fetchAndCacheSeasonDetails(key, seasonNumber, language)
+            }
+        }
+    }
+
+    /**
+     * Запускает фоновую ревалидацию сезона с дедупликацией параллельных запросов.
+     * Если ревалидация для данного ключа сезона уже выполняется, повторный вызов игнорируется.
+     */
+    private fun revalidateSeasonInBackground(key: MediaKey, seasonNumber: Int, language: String) {
+        val requestKey = "${key.provider}:${key.type}:${key.id}:$seasonNumber:$language"
+        val existingJob = inFlightRevalidations[requestKey]
+        if (existingJob != null && existingJob.isActive) {
+            return
         }
 
+        val job = catalogScope.launch {
+            try {
+                fetchAndCacheSeasonDetails(key, seasonNumber, language)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                logger.error("Ошибка фоновой ревалидации сезона key=$key, season=$seasonNumber", e)
+            } finally {
+                inFlightRevalidations.remove(requestKey)
+            }
+        }
+        inFlightRevalidations[requestKey] = job
+    }
+
+    /**
+     * Запрашивает свежие данные сезона из TMDB API, маппит их и безопасно сохраняет в SQLite репозиторий.
+     */
+    private suspend fun fetchAndCacheSeasonDetails(
+        key: MediaKey,
+        seasonNumber: Int,
+        language: String
+    ): List<org.ensodai.avalonmediacard.contract.slot.EpisodeItem> {
         val tmdbId = if (key.type == EntityType.TV && !key.id.startsWith("tv:")) "tv:${key.id}" else key.id
         val seasonDetail = repository.getSeasonDetails(tmdbId, seasonNumber, language) ?: return emptyList()
         val mapped = mapper.mapSeasonDetails(seasonDetail)
 
-        catalogScope.launch {
-            try {
-                cacheRepository.upsertSeasonDetails("tmdb", key.id, language, seasonNumber, mapped)
-            } catch (e: Exception) {
-                logger.error("Ошибка сохранения кэша сезона key=$key, season=$seasonNumber", e)
-            }
+        try {
+            cacheRepository.upsertSeasonDetails("tmdb", key.id, language, seasonNumber, mapped)
+        } catch (e: Exception) {
+            logger.error("Ошибка сохранения кэша сезона key=$key, season=$seasonNumber", e)
         }
         return mapped
     }

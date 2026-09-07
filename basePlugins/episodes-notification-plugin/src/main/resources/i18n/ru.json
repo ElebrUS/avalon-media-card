@@ -1,0 +1,18 @@
+{
+  "sidebar.episodes_notifications": "Новые серии",
+  "feed.title": "Новые серии",
+  "feed.subtitle": "Свежие эпизоды отслеживаемых сериалов",
+  "feed.section.today": "Сегодня",
+  "feed.section.this_week": "На этой неделе",
+  "feed.section.earlier": "Ранее в этом месяце",
+  "feed.section.missed": "Вы пропустили",
+  "feed.mark_all_read": "Отметить все прочитанными",
+  "feed.watch_episode": "Смотреть",
+  "feed.mark_watched": "Просмотрено",
+  "feed.about_show": "О сериале",
+  "feed.empty.title": "Все серии просмотрены!",
+  "feed.empty.description": "Вы не пропустили ни одной новой серии. Как только выйдет продолжение ваших сериалов, оно появится здесь.",
+  "feed.empty.no_watching": "Вы пока не добавили ни одного сериала в список просмотра.",
+  "feed.rollup.missed_count": "вышло {count} новых серий",
+  "feed.movie_premiere": "Премьера фильма"
+}

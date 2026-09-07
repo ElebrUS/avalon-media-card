@@ -3,6 +3,7 @@ package org.ensodai.avalonmediacard.repository
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import org.ensodai.avalonmediacard.auth.WatchedProgress
+import org.ensodai.avalonmediacard.contract.model.MediaStatus
 import org.ensodai.avalonmediacard.contract.model.MediaType
 import org.ensodai.avalonmediacard.contract.model.UserEpisodeItem
 import org.ensodai.avalonmediacard.contract.model.UserMovieItem
@@ -17,7 +18,6 @@ import org.koin.core.annotation.Single
 import kotlin.time.Clock
 import kotlin.time.Instant
 import kotlin.uuid.Uuid
-
 
 sealed class UserMovieEvent {
     object Changed : UserMovieEvent()
@@ -49,7 +49,9 @@ class UserMovieRepository : UserMovieProvider {
                 lastWatchedAt = it[UserMovieTable.lastWatchedAt],
                 lastSourceProviderId = it[UserMovieTable.lastSourceProviderId],
                 lastSourceId = it[UserMovieTable.lastSourceId],
-                lastSourcePayload = it[UserMovieTable.lastSourcePayload]
+                lastSourcePayload = it[UserMovieTable.lastSourcePayload],
+                createdAt = it[UserMovieTable.createdAt],
+                updatedAt = it[UserMovieTable.updatedAt]
             )
         }
     }
@@ -179,18 +181,41 @@ class UserMovieRepository : UserMovieProvider {
                 .where { MediaTable.externalId eq item.mediaId }
                 .limit(1)
                 .map { it[MediaTable.id].value }
-                .singleOrNull() ?: return@dbQuery false
-
-            val episodeId = (MediaEpisodeTable innerJoin MediaSeasonTable)
-                .selectAll()
-                .where {
-                    (MediaSeasonTable.mediaId eq internalMediaId) and
-                            (MediaSeasonTable.seasonNumber eq item.season) and
-                            (MediaEpisodeTable.episodeNumber eq item.episode)
+                .singleOrNull() ?: run {
+                    val newId = Uuid.random()
+                    MediaTable.insert {
+                        it[id] = newId
+                        it[this.catalogId] = item.catalogId.ifEmpty { "tmdb" }
+                        it[this.externalId] = item.mediaId
+                        it[this.mediaType] = "tv"
+                    }[MediaTable.id].value
                 }
-                .singleOrNull()
-                ?.get(MediaEpisodeTable.id)
-                ?.value ?: return@dbQuery false
+
+            val seasonId = MediaSeasonTable.selectAll()
+                .where { (MediaSeasonTable.mediaId eq internalMediaId) and (MediaSeasonTable.seasonNumber eq item.season) }
+                .limit(1)
+                .map { it[MediaSeasonTable.id].value }
+                .singleOrNull() ?: run {
+                    val newSeasonId = Uuid.random()
+                    MediaSeasonTable.insert {
+                        it[id] = newSeasonId
+                        it[this.mediaId] = internalMediaId
+                        it[seasonNumber] = item.season
+                    }[MediaSeasonTable.id].value
+                }
+
+            val episodeId = MediaEpisodeTable.selectAll()
+                .where { (MediaEpisodeTable.seasonId eq seasonId) and (MediaEpisodeTable.episodeNumber eq item.episode) }
+                .limit(1)
+                .map { it[MediaEpisodeTable.id].value }
+                .singleOrNull() ?: run {
+                    val newEpisodeId = Uuid.random()
+                    MediaEpisodeTable.insert {
+                        it[id] = newEpisodeId
+                        it[this.seasonId] = seasonId
+                        it[episodeNumber] = item.episode
+                    }[MediaEpisodeTable.id].value
+                }
 
             val exists = UserEpisodeTable.selectAll()
                 .where {
@@ -230,6 +255,7 @@ class UserMovieRepository : UserMovieProvider {
                     it[lastSourcePayload] = item.lastSourcePayload
                 }
             }
+
             _updates.emit(UserMovieEvent.Changed)
             true
         } catch (e: Exception) {

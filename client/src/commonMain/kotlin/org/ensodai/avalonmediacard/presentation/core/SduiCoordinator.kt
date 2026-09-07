@@ -17,6 +17,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalUriHandler
 import kotlinx.coroutines.launch
 import org.ensodai.avalonmediacard.contract.slot.*
+import org.ensodai.avalonmediacard.contract.ui.navigation.Screen
 import org.ensodai.avalonmediacard.presentation.navigation.LocalNavigation
 
 val LocalExecutingAction = compositionLocalOf<Action?> { null }
@@ -46,6 +47,12 @@ fun SduiCoordinator(
             when (action) {
                 is ActionNavigate -> navigation.navigateTo(action.screen)
                 is ActionOpenUrl -> uriHandler.openUri(action.url)
+                is ActionPreparePlayer -> {
+                    val handled = viewModel.handleLocalAction(action)
+                    if (!handled) {
+                        navigation.navigateTo(Screen.Details(action.key))
+                    }
+                }
                 is ServerAction -> {
                     scope.launch {
                         executingAction = action
@@ -57,7 +64,15 @@ fun SduiCoordinator(
                                     when (val act = result.action) {
                                         is ActionNavigate -> navigation.navigateTo(act.screen)
                                         is ActionOpenUrl -> uriHandler.openUri(act.url)
-                                        else -> viewModel.handleLocalAction(act)
+                                        is ActionPreparePlayer -> {
+                                            val handled = viewModel.handleLocalAction(act)
+                                            if (!handled) {
+                                                navigation.navigateTo(Screen.Details(act.key))
+                                            }
+                                        }
+                                        else -> {
+                                            viewModel.handleLocalAction(act)
+                                        }
                                     }
                                 }
 
@@ -85,11 +100,13 @@ fun SduiCoordinator(
                             }
                         }
                     }
-                    Unit
                 }
 
-                else -> viewModel.handleLocalAction(action)
+                else -> {
+                    viewModel.handleLocalAction(action)
+                }
             }
+            Unit
         }
     }
 

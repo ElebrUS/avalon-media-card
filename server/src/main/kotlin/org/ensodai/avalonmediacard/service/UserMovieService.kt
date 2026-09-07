@@ -75,7 +75,7 @@ class UserMovieService(
         val saved = userMovieRepository.updateUserMovie(item)
         if (!saved) return false
 
-        // 2. Add metadata to cache in background
+        // 2. Add metadata to cache in background and dismiss notification if watched
         serviceScope.launch {
             try {
                 val entityType = if (item.mediaType == MediaType.MOVIE) EntityType.MOVIE else EntityType.TV
@@ -84,7 +84,7 @@ class UserMovieService(
                 val key = MediaKey(provider, entityType, item.mediaId)
                 mediaCatalog.getMediaDetails(key) // This fetches and caches quietly
             } catch (e: Exception) {
-                // Ignore background fetch errors
+                // Ignore background errors
             }
         }
 

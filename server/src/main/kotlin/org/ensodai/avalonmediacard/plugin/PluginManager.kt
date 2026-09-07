@@ -21,6 +21,7 @@ import org.ensodai.avalonmediacard.contract.slot.ScreenManifest
 import org.ensodai.avalonmediacard.contract.slot.ServerAction
 import org.ensodai.avalonmediacard.recommendation.RecommendationEngineRegistry
 import org.ensodai.avalonmediacard.repository.SystemSettingsRepository
+import org.ensodai.avalonmediacard.repository.UserEpisodeNotificationRepository
 import org.ensodai.avalonmediacard.repository.UserExternalAuthRepository
 import org.ensodai.avalonmediacard.repository.UserFeedCacheRepository
 import org.ensodai.avalonmediacard.repository.UserIntegrationSettingsRepository
@@ -53,7 +54,8 @@ class PluginManager(
     private val affinityVectorStore: AffinityVectorStore,
     private val genreDictionaryProvider: GenreDictionaryProvider,
     private val userFeedCacheRepository: UserFeedCacheRepository,
-    private val userSettingsRepository: UserSettingsRepository
+    private val userSettingsRepository: UserSettingsRepository,
+    private val userEpisodeNotificationRepository: UserEpisodeNotificationRepository
 ) {
     private val logger = LoggerFactory.getLogger(PluginManager::class.java)
     private val loadedPlugins = mutableListOf<AvalonPlugin>()
@@ -175,7 +177,8 @@ class PluginManager(
                 userGlobalSettings = object : UserGlobalSettingsProvider {
                     override suspend fun getUserSettings(userId: Uuid): UserSettingsDto? =
                         userSettingsRepository.getUserSettings(userId)
-                }
+                },
+                episodeNotifications = userEpisodeNotificationRepository
             )
 
             pluginContexts[plugin.id] = context

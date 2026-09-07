@@ -1,0 +1,18 @@
+{
+  "sidebar.episodes_notifications": "New Episodes",
+  "feed.title": "New Episodes",
+  "feed.subtitle": "Fresh episodes from your watchlist",
+  "feed.section.today": "Today",
+  "feed.section.this_week": "This Week",
+  "feed.section.earlier": "Earlier This Month",
+  "feed.section.missed": "You Missed",
+  "feed.mark_all_read": "Mark All as Read",
+  "feed.watch_episode": "Watch",
+  "feed.mark_watched": "Watched",
+  "feed.about_show": "About Show",
+  "feed.empty.title": "All Caught Up!",
+  "feed.empty.description": "You haven't missed any new episodes. Fresh releases will appear here as they air.",
+  "feed.empty.no_watching": "You haven't marked any shows as 'Watching' yet.",
+  "feed.rollup.missed_count": "{count} new episodes released",
+  "feed.movie_premiere": "Movie Premiere"
+}

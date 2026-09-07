@@ -490,14 +490,17 @@ class DetailsViewModel(
         )
     }
 
-    override fun handleLocalAction(action: Action) {
+    override fun handleLocalAction(action: Action): Boolean {
         when (action) {
-            is ActionPlayVideo -> handlePlayVideo(action)
+            is ActionPlayVideo -> {
+                handlePlayVideo(action)
+                return true
+            }
             is ActionOpenSources -> {
                 openSourcesSheet()
+                return true
             }
             is ActionPreparePlayer -> {
-
                 toggleSources(false)
                 val canonicalTitle = viewState.value.header?.state?.data?.title?.takeIf { it.isNotBlank() } ?: action.title
                 setPlayerState(
@@ -509,9 +512,10 @@ class DetailsViewModel(
                         targetEpisode = action.targetEpisode
                     )
                 )
+                return true
             }
 
-            else -> super.handleLocalAction(action)
+            else -> return super.handleLocalAction(action)
         }
     }
 }

@@ -51,7 +51,9 @@ tasks.register("compileAll") {
         ":basePlugins:torrserver-plugin:build",
         ":basePlugins:rutube-plugin:build",
         ":basePlugins:vk-video-plugin:build",
-        ":basePlugins:anilibria-plugin:build"
+        ":basePlugins:anilibria-plugin:build",
+        ":basePlugins:lampac-adapter-plugin:build",
+        ":basePlugins:episodes-notification-plugin:build"
     )
 }
 
@@ -70,7 +72,9 @@ tasks.register("prepareDocker") {
         ":basePlugins:torrserver-plugin:build",
         ":basePlugins:rutube-plugin:build",
         ":basePlugins:vk-video-plugin:build",
-        ":basePlugins:anilibria-plugin:build"
+        ":basePlugins:anilibria-plugin:build",
+        ":basePlugins:lampac-adapter-plugin:build",
+        ":basePlugins:episodes-notification-plugin:build"
     )
     val rootProjectDir = layout.projectDirectory
     doLast {
@@ -148,7 +152,9 @@ tasks.register("runAll") {
         ":basePlugins:torrserver-plugin:build",
         ":basePlugins:rutube-plugin:build",
         ":basePlugins:vk-video-plugin:build",
-        ":basePlugins:anilibria-plugin:build"
+        ":basePlugins:anilibria-plugin:build",
+        ":basePlugins:lampac-adapter-plugin:build",
+        ":basePlugins:episodes-notification-plugin:build"
     )
 
     val rootDirPath = rootDir.absolutePath

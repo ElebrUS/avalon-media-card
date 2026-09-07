@@ -36,6 +36,7 @@ import org.ensodai.avalonmediacard.presentation.screens.dashboardScreen.Dashboar
 import org.ensodai.avalonmediacard.presentation.screens.demoScreen.DemoScreen
 import org.ensodai.avalonmediacard.presentation.screens.detailsScreen.DetailsScreen
 import org.ensodai.avalonmediacard.presentation.screens.dynamic.DynamicScreen
+import org.ensodai.avalonmediacard.presentation.screens.episodesNotificationsScreen.EpisodesNotificationsScreen
 import org.ensodai.avalonmediacard.presentation.screens.integrations.IntegrationsScreen
 import org.ensodai.avalonmediacard.presentation.screens.mediaScreen.MediaListScreen
 import org.ensodai.avalonmediacard.presentation.screens.moviesScreen.MoviesScreen
@@ -271,6 +272,12 @@ fun MainAppContent(
                                                         val expectedCount =
                                                             currentSidebarItems.find { it.itemId == tabId }?.itemsCount
                                                         MyCollectionScreen(expectedItemsCount = expectedCount)
+                                                    }
+
+                                                    is Screen.EpisodesNotifications -> {
+                                                        val expectedCount =
+                                                            currentSidebarItems.find { it.itemId == tabId }?.itemsCount
+                                                        EpisodesNotificationsScreen(expectedItemsCount = expectedCount)
                                                     }
 
                                                     is Screen.MovieDetails -> {

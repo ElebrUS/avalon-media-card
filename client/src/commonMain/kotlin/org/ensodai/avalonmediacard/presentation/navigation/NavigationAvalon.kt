@@ -56,6 +56,10 @@ class NavigationAvalon(
         navController.navigate(ScreenKey(Screen.Search(initialQuery)))
     }
 
+    override fun navigateToEpisodesNotifications() {
+        navController.navigate(ScreenKey(Screen.EpisodesNotifications))
+    }
+
     override fun navigateTo(screen: Screen) {
         navController.navigate(ScreenKey(screen))
     }

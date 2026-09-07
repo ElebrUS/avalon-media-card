@@ -367,6 +367,7 @@ fun SidebarMenuItem(
         "user" -> Lucide.User
         "LibraryBooks" -> Lucide.Folder
         "search" -> Lucide.Search
+        "bell" -> Lucide.Bell
         else -> if (isMainGroup) Lucide.LayoutGrid else Lucide.Hash
     }
 
@@ -428,6 +429,7 @@ fun getLocalizedSidebarTitle(item: SidebarItem): String {
         "trends" -> stringResource(Res.string.nav_trends)
         "search" -> stringResource(Res.string.nav_search)
         "collection" -> stringResource(Res.string.nav_my_collection)
+        "episodes_notifications" -> stringResource(Res.string.episodes_notifications_title)
         else -> item.title ?: ""
     }
 }
