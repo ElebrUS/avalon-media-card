@@ -14,6 +14,7 @@ object TimelineDownloadPercent {
     const val MIN_READER_READ_AHEAD = 5
     const val MAX_READER_READ_AHEAD = 100
     const val DEFAULT_TIMELINE_BUFFER_PERCENT = 15
+    /** Key under plugin settings (`plugin:torrserver-plugin:…`) and admin system settings. */
     const val SETTING_KEY = "torrserver_timeline_buffer_percent"
 
     fun parseSetting(raw: String?): Int {

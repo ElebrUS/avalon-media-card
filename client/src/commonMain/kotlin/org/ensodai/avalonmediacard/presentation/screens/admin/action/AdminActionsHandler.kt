@@ -212,6 +212,10 @@ fun AdminViewModel.onTorrServerUseGstChanged(useGst: Boolean) {
     updateViewState { it.copy(torrServerUseGst = useGst) }
 }
 
+fun AdminViewModel.onTorrServerTimelineBufferChanged(percent: String) {
+    updateViewState { it.copy(torrServerTimelineBufferPercentInput = percent.filter { ch -> ch.isDigit() }.take(3)) }
+}
+
 fun AdminViewModel.onProwlarrUrlChanged(url: String) {
     updateViewState { it.copy(prowlarrUrlInput = url, prowlarrTestResult = null, prowlarrTestSuccess = null) }
 }
@@ -253,6 +257,7 @@ fun AdminViewModel.loadGlobalIntegrations(
                         torrServerPasswordInput = settings.torrServerPassword ?: "",
                         torrServerShareWithUsers = settings.torrServerShareWithUsers,
                         torrServerUseGst = settings.torrServerUseGst,
+                        torrServerTimelineBufferPercentInput = settings.torrServerTimelineBufferPercent.toString(),
                         prowlarrUrlInput = settings.prowlarrUrl ?: "",
                         prowlarrApiKeyInput = settings.prowlarrApiKey ?: "",
                         prowlarrShareWithUsers = settings.prowlarrShareWithUsers,
@@ -293,6 +298,7 @@ fun AdminViewModel.saveGlobalIntegrations(
                 torrServerPassword = state.torrServerPasswordInput,
                 torrServerShareWithUsers = state.torrServerShareWithUsers,
                 torrServerUseGst = state.torrServerUseGst,
+                torrServerTimelineBufferPercent = state.torrServerTimelineBufferPercentInput.toIntOrNull()?.coerceIn(0, 100) ?: 15,
                 prowlarrUrl = state.prowlarrUrlInput,
                 prowlarrApiKey = state.prowlarrApiKeyInput,
                 prowlarrShareWithUsers = state.prowlarrShareWithUsers,
@@ -378,7 +384,8 @@ fun AdminViewModel.saveTorrServerSettings(
                 login = state.torrServerLoginInput,
                 password = state.torrServerPasswordInput,
                 shareWithUsers = state.torrServerShareWithUsers,
-                useGst = state.torrServerUseGst
+                useGst = state.torrServerUseGst,
+                timelineBufferPercent = state.torrServerTimelineBufferPercentInput.toIntOrNull()?.coerceIn(0, 100) ?: 15
             )
         ).fold(
             onSuccess = {

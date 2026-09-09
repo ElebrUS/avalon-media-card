@@ -30,6 +30,7 @@ data class AdminViewState(
     val torrServerPasswordInput: String = "",
     val torrServerShareWithUsers: Boolean = false,
     val torrServerUseGst: Boolean = false,
+    val torrServerTimelineBufferPercentInput: String = "15",
     val isTorrServerTesting: Boolean = false,
     val torrServerTestResult: String? = null,
     val torrServerTestSuccess: Boolean? = null,

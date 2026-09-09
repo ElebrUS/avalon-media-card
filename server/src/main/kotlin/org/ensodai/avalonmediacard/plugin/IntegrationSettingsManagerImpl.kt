@@ -98,6 +98,12 @@ class IntegrationSettingsManagerImpl(
         }
     }
 
+    override suspend fun getTorrServerTimelineBufferPercent(): Int {
+        val raw = systemSettingsRepository.getSetting("torrserver_timeline_buffer_percent")
+            ?: systemSettingsRepository.getSetting("plugin:torrserver-plugin:torrserver_timeline_buffer_percent")
+        return raw?.trim()?.removeSuffix("%")?.trim()?.toIntOrNull()?.coerceIn(0, 100) ?: 15
+    }
+
     override suspend fun getProwlarrSettings(userId: Uuid?): ResolvedSearchEngineSetting? {
         if (userId != null) {
             val userUse = userIntegrationSettingsRepository.getSetting(userId, pluginId, "use_prowlarr")?.toBooleanStrictOrNull()

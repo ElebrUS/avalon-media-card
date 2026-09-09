@@ -268,9 +268,12 @@ class PrepareStreamUseCase(
         resolution: PlaybackResolution,
         userId: Uuid?
     ) {
-        val rawSetting = userId?.let { context.userSettings.getString(it, TimelineDownloadPercent.SETTING_KEY) }
-            ?: context.settings.getString(TimelineDownloadPercent.SETTING_KEY)
-        val timelinePercent = TimelineDownloadPercent.parseSetting(rawSetting)
+        val timelinePercent = runCatching {
+            context.integrationManager.getTorrServerTimelineBufferPercent()
+        }.getOrNull()
+            ?: TimelineDownloadPercent.parseSetting(
+                context.settings.getString(TimelineDownloadPercent.SETTING_KEY)
+            )
 
         val durationSeconds = stream.durationSeconds?.takeIf { it > 0.0 }
             ?: resolution.probeDurationSeconds

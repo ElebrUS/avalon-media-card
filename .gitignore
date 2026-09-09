@@ -95,3 +95,7 @@ client/src/jvmMain/resources/linux-x86-64/
 desktopApp/src/jvmMain/resources/linux-x86-64/
 mpv-libs/
 client/src/jvmMain/resources/mpv/
+
+# Local includeBuild of the core contract
+avalon-media-card-core-contract/
+META-INF/

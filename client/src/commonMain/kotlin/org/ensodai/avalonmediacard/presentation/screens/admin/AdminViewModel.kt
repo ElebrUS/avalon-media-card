@@ -55,6 +55,7 @@ import org.ensodai.avalonmediacard.presentation.screens.admin.action.onTorrServe
 import org.ensodai.avalonmediacard.presentation.screens.admin.action.onTorrServerLoginChanged
 import org.ensodai.avalonmediacard.presentation.screens.admin.action.onTorrServerPasswordChanged
 import org.ensodai.avalonmediacard.presentation.screens.admin.action.onTorrServerShareChanged
+import org.ensodai.avalonmediacard.presentation.screens.admin.action.onTorrServerTimelineBufferChanged
 import org.ensodai.avalonmediacard.presentation.screens.admin.action.onTorrServerUseGstChanged
 import org.ensodai.avalonmediacard.presentation.screens.admin.action.onUserRoleChange
 import org.ensodai.avalonmediacard.presentation.screens.admin.action.onUserStatusChange
@@ -140,6 +141,7 @@ class AdminViewModel(
         onTorrServerPasswordChanged = ::onTorrServerPasswordChanged,
         onTorrServerShareChanged = ::onTorrServerShareChanged,
         onTorrServerUseGstChanged = ::onTorrServerUseGstChanged,
+        onTorrServerTimelineBufferChanged = ::onTorrServerTimelineBufferChanged,
         onProwlarrUrlChanged = ::onProwlarrUrlChanged,
         onProwlarrApiKeyChanged = ::onProwlarrApiKeyChanged,
         onProwlarrShareChanged = ::onProwlarrShareChanged,

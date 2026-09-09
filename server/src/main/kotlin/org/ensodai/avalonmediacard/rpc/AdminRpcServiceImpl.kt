@@ -200,6 +200,8 @@ class AdminRpcServiceImpl(
             torrServerPassword = systemSettingsRepository.getSetting("torrserver_password"),
             torrServerShareWithUsers = systemSettingsRepository.getSetting("torrserver_share_with_users")?.toBooleanStrictOrNull() ?: false,
             torrServerUseGst = systemSettingsRepository.getSetting("torrserver_use_gst")?.toBooleanStrictOrNull() ?: false,
+            torrServerTimelineBufferPercent = systemSettingsRepository.getSetting("torrserver_timeline_buffer_percent")
+                ?.trim()?.removeSuffix("%")?.trim()?.toIntOrNull()?.coerceIn(0, 100) ?: 15,
             prowlarrUrl = systemSettingsRepository.getSetting("prowlarr_url"),
             prowlarrApiKey = systemSettingsRepository.getSetting("prowlarr_api_key"),
             prowlarrShareWithUsers = systemSettingsRepository.getSetting("prowlarr_share_with_users")?.toBooleanStrictOrNull() ?: false,
@@ -232,6 +234,11 @@ class AdminRpcServiceImpl(
             }
             request.torrServerUseGst?.let {
                 systemSettingsRepository.saveSetting("torrserver_use_gst", it.toString())
+            }
+            request.torrServerTimelineBufferPercent?.let {
+                val value = it.coerceIn(0, 100).toString()
+                systemSettingsRepository.saveSetting("torrserver_timeline_buffer_percent", value)
+                systemSettingsRepository.saveSetting("plugin:torrserver-plugin:torrserver_timeline_buffer_percent", value)
             }
             request.prowlarrUrl?.let {
                 systemSettingsRepository.saveSetting("prowlarr_url", it.trim())
@@ -286,6 +293,9 @@ class AdminRpcServiceImpl(
             systemSettingsRepository.saveSetting("torrserver_password", (request.password ?: "").trim())
             systemSettingsRepository.saveSetting("torrserver_share_with_users", request.shareWithUsers.toString())
             systemSettingsRepository.saveSetting("torrserver_use_gst", request.useGst.toString())
+            val timelineBuffer = request.timelineBufferPercent.coerceIn(0, 100).toString()
+            systemSettingsRepository.saveSetting("torrserver_timeline_buffer_percent", timelineBuffer)
+            systemSettingsRepository.saveSetting("plugin:torrserver-plugin:torrserver_timeline_buffer_percent", timelineBuffer)
             pluginManager.emitChangeEvent("plugin:torrserver:host")
             AdminActionResponse(success = true)
         } catch (e: Exception) {

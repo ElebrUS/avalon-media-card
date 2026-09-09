@@ -255,6 +255,9 @@
     <string name="admin_integrations_torrserver_provide_all">Allow all users to use this TorrServer as a shared streaming server</string>
     <string name="admin_integrations_torrserver_gst">Use GST (HLS streaming)</string>
     <string name="admin_integrations_torrserver_gst_desc">Enables transcoding and audio track/subtitle selection via TorrServer GST. Falls back to direct stream if unavailable.</string>
+    <string name="admin_integrations_torrserver_timeline_buffer">Timeline buffer ahead (%)</string>
+    <string name="admin_integrations_torrserver_timeline_buffer_desc">Percent of video runtime to keep downloaded ahead of the playhead. Computed from duration and resume position, not file size. Applied globally to TorrServer as ReaderReadAHead (5–100%).</string>
+    <string name="admin_integrations_torrserver_timeline_buffer_hint">15</string>
     <string name="admin_integrations_prowlarr_desc">Global Prowlarr torrent tracker indexer for discovering media content.</string>
     <string name="admin_integrations_prowlarr_url_hint">Prowlarr URL (e.g., http://127.0.0.1:9696)</string>
     <string name="admin_integrations_prowlarr_key">Prowlarr API Key</string>

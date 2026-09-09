@@ -423,6 +423,26 @@ fun AdminIntegrationsTab(
                 )
             }
 
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(
+                    text = stringResource(Res.string.admin_integrations_torrserver_timeline_buffer),
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    text = stringResource(Res.string.admin_integrations_torrserver_timeline_buffer_desc),
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                AvalonTextField(
+                    value = state.torrServerTimelineBufferPercentInput,
+                    onValueChange = actions.onTorrServerTimelineBufferChanged,
+                    placeholder = stringResource(Res.string.admin_integrations_torrserver_timeline_buffer_hint),
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+
             // TorrServer Test connection row
             Row(
                 modifier = Modifier.fillMaxWidth(),

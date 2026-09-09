@@ -25,6 +25,7 @@ data class AdminActions(
     val onTorrServerPasswordChanged: (String) -> Unit,
     val onTorrServerShareChanged: (Boolean) -> Unit,
     val onTorrServerUseGstChanged: (Boolean) -> Unit,
+    val onTorrServerTimelineBufferChanged: (String) -> Unit,
     val onProwlarrUrlChanged: (String) -> Unit,
     val onProwlarrApiKeyChanged: (String) -> Unit,
     val onProwlarrShareChanged: (Boolean) -> Unit,

@@ -255,6 +255,9 @@
     <string name="admin_integrations_torrserver_provide_all">Разрешить всем пользователям использовать этот TorrServer как общий стриминг-сервер</string>
     <string name="admin_integrations_torrserver_gst">Использовать GST (HLS стриминг)</string>
     <string name="admin_integrations_torrserver_gst_desc">Включает транскодирование и выбор аудиодорожек/субтитров через TorrServer GST. При недоступности автоматически переключается на прямой поток.</string>
+    <string name="admin_integrations_torrserver_timeline_buffer">Буфер впереди по таймлайну (%)</string>
+    <string name="admin_integrations_torrserver_timeline_buffer_desc">Доля длительности ролика, которую держим скачанной впереди от текущей позиции. Считаем от таймлайна (длительность и прогресс), а не от размера файла. Глобально применяется к TorrServer как ReaderReadAHead (5–100%).</string>
+    <string name="admin_integrations_torrserver_timeline_buffer_hint">15</string>
     <string name="admin_integrations_prowlarr_desc">Глобальный поисковый индексатор торрент-трекеров Prowlarr для поиска медиаконтента.</string>
     <string name="admin_integrations_prowlarr_url_hint">URL Prowlarr (например, http://127.0.0.1:9696)</string>
     <string name="admin_integrations_prowlarr_key">API Ключ Prowlarr</string>
