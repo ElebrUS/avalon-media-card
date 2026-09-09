@@ -1,6 +1,7 @@
 package org.ensodai.avalonmediacard.plugins.samsungtv.domain
 
 import org.ensodai.avalonmediacard.plugins.samsungtv.SamsungTvPaths
+import java.io.File
 import java.util.zip.ZipInputStream
 import kotlin.test.Test
 import kotlin.test.assertContains
@@ -116,5 +117,57 @@ class SamsungTvPathsTest {
     fun normalizeBaseUrlStripsTrailingSlash() {
         assertEquals("http://192.168.1.10:8080", SamsungTvPaths.normalizeBaseUrl(" http://192.168.1.10:8080/ "))
         assertEquals("", SamsungTvPaths.normalizeBaseUrl("  "))
+    }
+
+    @Test
+    fun widgetOutputDirUsesExistingWebRootWithoutServerRoutes() {
+        val tmp = kotlin.io.path.createTempDirectory("samsung-tv-paths").toFile()
+        try {
+            val web = File(tmp, "web").apply { mkdirs() }
+            val plugins = File(tmp, "plugins").apply { mkdirs() }
+            val out = SamsungTvPaths.widgetOutputDir(
+                pluginDir = plugins.absolutePath,
+                webDirEnv = null,
+                workingDir = tmp
+            )
+            assertEquals(File(web, "samsung-widget").canonicalFile, out.canonicalFile)
+        } finally {
+            tmp.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun widgetOutputDirPrefersWebDirEnv() {
+        val tmp = kotlin.io.path.createTempDirectory("samsung-tv-webdir").toFile()
+        try {
+            val dist = File(tmp, "dist").apply { mkdirs() }
+            File(tmp, "web").mkdirs()
+            val plugins = File(tmp, "plugins").apply { mkdirs() }
+            val out = SamsungTvPaths.widgetOutputDir(
+                pluginDir = plugins.absolutePath,
+                webDirEnv = dist.absolutePath,
+                workingDir = tmp
+            )
+            assertEquals(File(dist, "samsung-widget").canonicalFile, out.canonicalFile)
+        } finally {
+            tmp.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun widgetOutputDirFallsBackToPluginDir() {
+        val tmp = kotlin.io.path.createTempDirectory("samsung-tv-fallback").toFile()
+        try {
+            val cwd = File(tmp, "cwd").apply { mkdirs() }
+            val plugins = File(tmp, "plugins").apply { mkdirs() }
+            val out = SamsungTvPaths.widgetOutputDir(
+                pluginDir = plugins.absolutePath,
+                webDirEnv = null,
+                workingDir = cwd
+            )
+            assertEquals(File(plugins, "samsung-widget").canonicalFile, out.canonicalFile)
+        } finally {
+            tmp.deleteRecursively()
+        }
     }
 }

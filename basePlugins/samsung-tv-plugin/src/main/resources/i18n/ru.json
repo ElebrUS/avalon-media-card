@@ -1,8 +1,8 @@
 {
   "plugin_name": "Виджет Samsung TV",
-  "plugin_description": "Регистрирует Tizen-виджет для телевизора Samsung",
+  "plugin_description": "Автономный Tizen-виджет для Samsung Smart TV. Положите JAR в plugins/ — правки сервера не нужны.",
   "settings.title": "Виджет Samsung TV",
-  "settings.description": "Установите Avalon на телевизор Samsung как Tizen-виджет, приложение URL Launcher или стартовый параметр Media Station X. Укажите адрес этого сервера в локальной сети, чтобы телевизор открыл веб-клиент.",
+  "settings.description": "Самостоятельный плагин: сам публикует Tizen-виджет в статику веб-клиента. Укажите адрес этого сервера в локальной сети. Установите .wgt, добавьте URL виджета в URL Launcher или укажите Media Station X на msx/start.json.",
   "settings.enabled": "Зарегистрировать виджет Samsung TV",
   "settings.public_url": "Публичный URL сервера для телевизора",
   "settings.widget_url": "URL виджета (URL Launcher)",

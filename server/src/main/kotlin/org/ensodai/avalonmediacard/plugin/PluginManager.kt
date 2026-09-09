@@ -319,8 +319,6 @@ class PluginManager(
 
     fun getPluginContext(pluginId: String): PluginContext? = pluginContexts[pluginId]
 
-    fun isPluginLoaded(pluginId: String): Boolean = loadedPlugins.any { it.id == pluginId }
-
     suspend fun handleAction(action: ServerAction, userId: Uuid?): ActionResult {
         val actionClass = action::class
         for (context in pluginContexts.values) {

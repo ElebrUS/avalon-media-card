@@ -16,8 +16,9 @@ import org.ensodai.avalonmediacard.plugins.samsungtv.presentation.SamsungTvScree
 import org.ensodai.avalonmediacard.plugins.samsungtv.presentation.SamsungTvSettingsPresenter
 
 /**
- * Registers a Tizen widget for Samsung Smart TV: Smart Hub preview, .wgt package,
- * URL Launcher entry and Media Station X start parameters.
+ * Drop-in plugin: registers a Tizen widget for Samsung Smart TV.
+ * Publishes `.wgt`, URL Launcher files and Smart Hub preview into `WEB_DIR`
+ * so the existing static file server exposes them — no core route is required.
  */
 class SamsungTvPlugin : AvalonPlugin {
     override val id: String = SamsungTvPaths.PLUGIN_ID

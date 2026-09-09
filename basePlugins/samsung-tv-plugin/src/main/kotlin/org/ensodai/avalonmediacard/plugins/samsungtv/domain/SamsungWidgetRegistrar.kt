@@ -15,7 +15,7 @@ class SamsungWidgetRegistrar(
     private val context: PluginContext,
     private val pluginVersion: String
 ) {
-    fun outputDir(): File = SamsungTvPaths.widgetOutputDir()
+    fun outputDir(): File = SamsungTvPaths.widgetOutputDir(context.pluginDir)
 
     fun publishBundledResources(publicBaseUrl: String = "", previewJson: String = emptyPreviewJson()) {
         val dir = outputDir().apply { mkdirs() }
