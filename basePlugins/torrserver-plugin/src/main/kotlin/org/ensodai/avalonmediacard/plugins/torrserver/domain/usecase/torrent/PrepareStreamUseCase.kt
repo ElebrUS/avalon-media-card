@@ -36,7 +36,8 @@ class PrepareStreamUseCase(
     private data class PlaybackResolution(
         val useGst: Boolean,
         val audioTracks: List<AudioTrack>,
-        val subtitleTracks: List<SubtitleTrack>
+        val subtitleTracks: List<SubtitleTrack>,
+        val probeDurationSeconds: Double? = null
     )
 
     suspend fun execute(stream: MediaStream, userId: Uuid?): MediaStream {
@@ -65,6 +66,7 @@ class PrepareStreamUseCase(
 
         val fileName = files.find { it.id == fileIndex }?.path ?: "video.mp4"
         val resolution = resolvePlaybackMethod(hash, fileIndex, fileName, userId)
+        applyTimelineBuffer(stream, resolution, userId)
 
         val finalUrl = torrServerRepository.buildStreamUrl(
             hash = hash,
@@ -233,9 +235,15 @@ class PrepareStreamUseCase(
         var actualUseGst = useGstRequested
         val audioTracks = mutableListOf<AudioTrack>()
         val subtitleTracks = mutableListOf<SubtitleTrack>()
+        var probeDurationSeconds: Double? = null
+        var probeInfo: TorrServerGstProbeInfo? = null
 
         if (useGstRequested) {
-            val probeInfo = torrServerRepository.getGstProbe(hash, fileIndex, userId)
+            probeInfo = torrServerRepository.getGstProbe(hash, fileIndex, userId)
+            val durationNs = probeInfo?.durationNS
+            if (durationNs != null && durationNs > 0L) {
+                probeDurationSeconds = durationNs / 1_000_000_000.0
+            }
             if (!isGstSupported(probeInfo, fileName)) {
                 context.logger.warn("GST probe провалился или контейнер/кодек (${fileName.substringAfterLast('.', "")}) не поддерживается GStreamer HLS. Фоллбэк на обычный поток.")
                 actualUseGst = false
@@ -252,7 +260,32 @@ class PrepareStreamUseCase(
             }
         }
         
-        return PlaybackResolution(actualUseGst, audioTracks, subtitleTracks)
+        return PlaybackResolution(actualUseGst, audioTracks, subtitleTracks, probeDurationSeconds)
+    }
+
+    private suspend fun applyTimelineBuffer(
+        stream: MediaStream,
+        resolution: PlaybackResolution,
+        userId: Uuid?
+    ) {
+        val rawSetting = userId?.let { context.userSettings.getString(it, TimelineDownloadPercent.SETTING_KEY) }
+            ?: context.settings.getString(TimelineDownloadPercent.SETTING_KEY)
+        val timelinePercent = TimelineDownloadPercent.parseSetting(rawSetting)
+
+        val durationSeconds = stream.durationSeconds?.takeIf { it > 0.0 }
+            ?: resolution.probeDurationSeconds
+
+        val positionSeconds = stream.watchedProgressSeconds?.toDouble()?.takeIf { it > 0.0 }
+        val readerPercent = TimelineDownloadPercent.readerReadAhead(
+            timelineBufferPercent = timelinePercent,
+            durationSeconds = durationSeconds,
+            positionSeconds = positionSeconds
+        )
+        context.logger.info(
+            "Буфер TorrServer по таймлайну: $timelinePercent% длительности " +
+                "(t=${positionSeconds ?: 0.0}s / ${durationSeconds ?: "?"}s) → ReaderReadAHead=$readerPercent%"
+        )
+        torrServerRepository.applyReaderReadAhead(readerPercent, userId)
     }
 
     private fun isGstSupported(probeInfo: TorrServerGstProbeInfo?, fileName: String): Boolean {

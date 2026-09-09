@@ -5,6 +5,7 @@ import org.ensodai.avalonmediacard.contract.slot.ActionResult
 import org.ensodai.avalonmediacard.plugins.torrserver.domain.model.SaveTorrServerSettingsCommand
 import org.ensodai.avalonmediacard.plugins.torrserver.domain.repository.SettingsRepository
 import org.ensodai.avalonmediacard.plugins.torrserver.domain.repository.saveSetting
+import org.ensodai.avalonmediacard.plugins.torrserver.domain.usecase.torrent.TimelineDownloadPercent
 import kotlin.uuid.Uuid
 
 class SaveTorrServerSettingsUseCase(
@@ -27,6 +28,9 @@ class SaveTorrServerSettingsUseCase(
             }
             cmd.useTorrServerGst?.let {
                 repository.saveSetting(userId, "use_torrserver_gst", it)
+            }
+            cmd.timelineBufferPercent?.let {
+                repository.saveSetting(userId, TimelineDownloadPercent.SETTING_KEY, it)
             }
             ActionResult.ShowNotification(context.i18n.t("status.settings_saved"), "success")
         } catch (e: Exception) {

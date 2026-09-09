@@ -6,9 +6,11 @@ import io.ktor.client.plugins.*
 import io.ktor.client.request.*
 import io.ktor.client.request.forms.*
 import io.ktor.http.*
-import io.ktor.utils.io.ByteReadChannel
 import kotlinx.coroutines.delay
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.jsonObject
 import org.ensodai.avalonmediacard.contract.plugins.PluginLogger
 import org.ensodai.avalonmediacard.plugins.torrserver.domain.model.TorrServerAction
 import org.ensodai.avalonmediacard.plugins.torrserver.domain.model.TorrServerFile
@@ -266,5 +268,46 @@ class TorrServerApiClient(
             logger.warn("Не удалось получить информацию о треках (probe) от TorrServer: ${e.message}")
         }
         return null
+    }
+
+    suspend fun applyReaderReadAhead(percent: Int, userId: kotlin.uuid.Uuid?) {
+        val clamped = percent.coerceIn(5, 100)
+        try {
+            val torrserverUrl = getTorrserverUrl(userId)
+            val auth = getAuthHeader(userId)
+            val getResponse = httpClient.post("$torrserverUrl/settings") {
+                if (auth != null) header(HttpHeaders.Authorization, auth)
+                contentType(ContentType.Application.Json)
+                setBody(TorrServerAction(action = "get"))
+                timeout { requestTimeoutMillis = 5000 }
+            }
+            if (getResponse.status != HttpStatusCode.OK) {
+                logger.warn("Не удалось прочитать настройки TorrServer: HTTP ${getResponse.status}")
+                return
+            }
+            val current = json.parseToJsonElement(getResponse.body<String>()).jsonObject
+            val updated = JsonObject(current.toMutableMap().apply {
+                put("ReaderReadAHead", JsonPrimitive(clamped))
+            })
+            val setPayload = JsonObject(
+                mapOf(
+                    "action" to JsonPrimitive("set"),
+                    "sets" to updated
+                )
+            )
+            val setResponse = httpClient.post("$torrserverUrl/settings") {
+                if (auth != null) header(HttpHeaders.Authorization, auth)
+                contentType(ContentType.Application.Json)
+                setBody(setPayload.toString())
+                timeout { requestTimeoutMillis = 8000 }
+            }
+            if (setResponse.status == HttpStatusCode.OK) {
+                logger.info("TorrServer ReaderReadAHead обновлён до $clamped% (окно по таймлайну)")
+            } else {
+                logger.warn("TorrServer отклонил обновление ReaderReadAHead: HTTP ${setResponse.status}")
+            }
+        } catch (e: Exception) {
+            logger.warn("Не удалось обновить ReaderReadAHead TorrServer: ${e.message}")
+        }
     }
 }

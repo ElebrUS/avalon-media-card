@@ -36,4 +36,8 @@ class TorrServerRepositoryImpl(
     override suspend fun getGstProbe(hash: String, fileIndex: Int?, userId: Uuid?): org.ensodai.avalonmediacard.plugins.torrserver.domain.model.TorrServerGstProbeInfo? {
         return apiClient.getGstProbe(hash, fileIndex, userId)
     }
+
+    override suspend fun applyReaderReadAhead(percent: Int, userId: Uuid?) {
+        apiClient.applyReaderReadAhead(percent, userId)
+    }
 }

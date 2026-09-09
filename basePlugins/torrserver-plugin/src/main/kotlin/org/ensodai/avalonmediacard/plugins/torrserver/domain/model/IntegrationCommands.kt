@@ -57,7 +57,8 @@ data class SaveTorrServerSettingsCommand(
     @SerialName("torrserver_host") val torrserverHost: String? = null,
     @SerialName("torrserver_login") val torrserverLogin: String? = null,
     @SerialName("torrserver_password") val torrserverPassword: String? = null,
-    @SerialName("use_torrserver_gst") val useTorrServerGst: String? = null
+    @SerialName("use_torrserver_gst") val useTorrServerGst: String? = null,
+    @SerialName("torrserver_timeline_buffer_percent") val timelineBufferPercent: String? = null
 ) : TemplateAction {
     override fun withParameter(key: String, value: Any): TemplateAction {
         return when (key) {
@@ -66,6 +67,7 @@ data class SaveTorrServerSettingsCommand(
             "torrserver_login" -> copy(torrserverLogin = value.toString())
             "torrserver_password" -> copy(torrserverPassword = value.toString())
             "use_torrserver_gst" -> copy(useTorrServerGst = value.toString())
+            "torrserver_timeline_buffer_percent" -> copy(timelineBufferPercent = value.toString())
             else -> this
         }
     }

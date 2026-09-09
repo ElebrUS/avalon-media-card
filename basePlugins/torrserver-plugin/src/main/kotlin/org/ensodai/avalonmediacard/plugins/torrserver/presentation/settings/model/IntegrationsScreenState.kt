@@ -5,6 +5,7 @@ data class TorrServerState(
     val host: String?,
     val login: String?,
     val pass: String?,
-    val useGst: Boolean
+    val useGst: Boolean,
+    val timelineBufferPercent: String
 )
 data class SearchEngineState(val use: Boolean, val url: String?, val key: String?)
