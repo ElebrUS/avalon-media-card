@@ -13,6 +13,7 @@ import org.ensodai.avalonmediacard.contract.slot.SlotId
 import org.ensodai.avalonmediacard.contract.slot.SlotState
 import org.ensodai.avalonmediacard.contract.slot.SlotUpdate
 import org.ensodai.avalonmediacard.contract.slot.ValidationStatus
+import org.ensodai.avalonmediacard.contract.i18n.currentPluginRequestOrigin
 import org.ensodai.avalonmediacard.plugins.samsungtv.SamsungTvPaths
 import org.ensodai.avalonmediacard.plugins.samsungtv.domain.SaveSamsungTvSettingsCommand
 import kotlin.uuid.Uuid
@@ -41,27 +42,17 @@ class SamsungTvSettingsPresenter(
     }
 
     private suspend fun buildSlot(enabled: Boolean, publicUrl: String): SlotUpdate {
-        val normalized = SamsungTvPaths.normalizeBaseUrl(publicUrl)
-        val widgetUrl = if (normalized.isNotBlank()) {
-            "$normalized${SamsungTvPaths.PUBLIC_PATH}/"
-        } else {
-            SamsungTvPaths.PUBLIC_PATH + "/"
-        }
-        val wgtUrl = if (normalized.isNotBlank()) {
-            "$normalized${SamsungTvPaths.PUBLIC_PATH}/${SamsungTvPaths.WGT_FILENAME}"
-        } else {
+        val effectiveBase = SamsungTvPaths.effectivePublicBaseUrl(publicUrl, currentPluginRequestOrigin())
+        val widgetUrl = SamsungTvPaths.publicResourceUrl(effectiveBase, "${SamsungTvPaths.PUBLIC_PATH}/")
+        val wgtUrl = SamsungTvPaths.publicResourceUrl(
+            effectiveBase,
             "${SamsungTvPaths.PUBLIC_PATH}/${SamsungTvPaths.WGT_FILENAME}"
-        }
-        val msxUrl = if (normalized.isNotBlank()) {
-            "$normalized${SamsungTvPaths.PUBLIC_PATH}/msx/start.json"
-        } else {
-            "${SamsungTvPaths.PUBLIC_PATH}/msx/start.json"
-        }
-        val previewUrl = if (normalized.isNotBlank()) {
-            "$normalized${SamsungTvPaths.PUBLIC_PATH}/${SamsungTvPaths.PREVIEW_FILENAME}"
-        } else {
+        )
+        val msxUrl = SamsungTvPaths.publicResourceUrl(effectiveBase, "${SamsungTvPaths.PUBLIC_PATH}/msx/start.json")
+        val previewUrl = SamsungTvPaths.publicResourceUrl(
+            effectiveBase,
             "${SamsungTvPaths.PUBLIC_PATH}/${SamsungTvPaths.PREVIEW_FILENAME}"
-        }
+        )
 
         return SlotUpdate(
             slotId = SlotId.Integrations,
@@ -118,7 +109,7 @@ class SamsungTvSettingsPresenter(
                     saveAction = SaveSamsungTvSettingsCommand(),
                     saveActionLabel = context.i18n.t("settings.save"),
                     isSaveEnabled = enabled,
-                    connectionStatus = if (enabled && normalized.isNotBlank()) {
+                    connectionStatus = if (enabled && effectiveBase.isNotBlank()) {
                         ValidationStatus.Success
                     } else {
                         ValidationStatus.None

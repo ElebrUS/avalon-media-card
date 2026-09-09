@@ -35,6 +35,7 @@ import org.ensodai.avalonmediacard.repository.UserRepository
 import org.ensodai.avalonmediacard.routes.imageProxyRoutes
 import org.ensodai.avalonmediacard.routes.streamProxyRoutes
 import org.ensodai.avalonmediacard.rpc.*
+import org.ensodai.avalonmediacard.security.RequestOriginResolver
 import org.ensodai.avalonmediacard.security.RpcSessionContext
 import org.ensodai.avalonmediacard.security.StreamTokenService
 import org.ensodai.avalonmediacard.sync.EpisodeNotificationSyncWorker
@@ -157,6 +158,7 @@ fun Application.module() {
                 }
             }
             val sessionContext = getOrCreateSessionContext()
+            sessionContext.requestOrigin = RequestOriginResolver.fromCall(call)
 
             registerService<AuthRpcService> {
                 call.application.getKoin().get<AuthRpcServiceImpl> { parametersOf(sessionContext) }

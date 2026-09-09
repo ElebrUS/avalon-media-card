@@ -5,6 +5,7 @@ import org.ensodai.avalonmediacard.contract.model.MediaKey
 import org.ensodai.avalonmediacard.contract.model.MediaProvider
 import org.ensodai.avalonmediacard.contract.model.MediaStatus
 import org.ensodai.avalonmediacard.contract.model.MediaType
+import org.ensodai.avalonmediacard.contract.i18n.currentPluginRequestOrigin
 import org.ensodai.avalonmediacard.contract.plugins.PluginContext
 import org.ensodai.avalonmediacard.plugins.samsungtv.SamsungTvPaths
 import java.io.File
@@ -54,8 +55,9 @@ class SamsungWidgetRegistrar(
 
     suspend fun register(previewUserId: Uuid? = null) {
         val enabled = context.settings.getBoolean(SamsungTvPaths.SETTING_ENABLED, true)
-        val publicBaseUrl = SamsungTvPaths.normalizeBaseUrl(
-            context.settings.getString(SamsungTvPaths.SETTING_PUBLIC_URL)
+        val publicBaseUrl = SamsungTvPaths.effectivePublicBaseUrl(
+            context.settings.getString(SamsungTvPaths.SETTING_PUBLIC_URL),
+            currentPluginRequestOrigin()
         )
         val previewJson = buildPreviewJson(publicBaseUrl, previewUserId)
         publishBundledResources(publicBaseUrl, previewJson)

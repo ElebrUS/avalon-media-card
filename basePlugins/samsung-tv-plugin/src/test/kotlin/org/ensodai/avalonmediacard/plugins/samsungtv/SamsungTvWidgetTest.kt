@@ -120,6 +120,29 @@ class SamsungTvPathsTest {
     }
 
     @Test
+    fun effectivePublicBaseUrlFallsBackToRequestOrigin() {
+        assertEquals(
+            "http://192.168.1.10:8080",
+            SamsungTvPaths.effectivePublicBaseUrl("http://192.168.1.10:8080/", "http://browser.local:9090")
+        )
+        assertEquals(
+            "http://browser.local:9090",
+            SamsungTvPaths.effectivePublicBaseUrl("  ", "http://browser.local:9090/")
+        )
+        assertEquals("", SamsungTvPaths.effectivePublicBaseUrl(null, null))
+        assertEquals("", SamsungTvPaths.effectivePublicBaseUrl("", ""))
+    }
+
+    @Test
+    fun publicResourceUrlJoinsBaseAndPath() {
+        assertEquals(
+            "http://192.168.1.10:8080/samsung-widget/",
+            SamsungTvPaths.publicResourceUrl("http://192.168.1.10:8080", "/samsung-widget/")
+        )
+        assertEquals("/samsung-widget/preview.json", SamsungTvPaths.publicResourceUrl("", "/samsung-widget/preview.json"))
+    }
+
+    @Test
     fun widgetOutputDirUsesExistingWebRootWithoutServerRoutes() {
         val tmp = kotlin.io.path.createTempDirectory("samsung-tv-paths").toFile()
         try {

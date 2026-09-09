@@ -52,4 +52,19 @@ object SamsungTvPaths {
         val trimmed = raw?.trim()?.trimEnd('/') ?: ""
         return trimmed
     }
+
+    /**
+     * Configured LAN/public URL wins; otherwise the origin of the current RPC request.
+     */
+    fun effectivePublicBaseUrl(stored: String?, requestOrigin: String? = null): String {
+        val configured = normalizeBaseUrl(stored)
+        if (configured.isNotBlank()) return configured
+        return normalizeBaseUrl(requestOrigin)
+    }
+
+    fun publicResourceUrl(baseUrl: String, relativePath: String): String {
+        val base = normalizeBaseUrl(baseUrl)
+        val path = if (relativePath.startsWith("/")) relativePath else "/$relativePath"
+        return if (base.isNotBlank()) "$base$path" else path
+    }
 }
