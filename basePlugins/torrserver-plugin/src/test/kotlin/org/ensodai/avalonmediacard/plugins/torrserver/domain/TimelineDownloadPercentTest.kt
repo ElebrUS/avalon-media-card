@@ -3,6 +3,7 @@ package org.ensodai.avalonmediacard.plugins.torrserver.domain
 import org.ensodai.avalonmediacard.plugins.torrserver.domain.usecase.torrent.TimelineDownloadPercent
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNull
 
 class TimelineDownloadPercentTest {
 
@@ -33,7 +34,6 @@ class TimelineDownloadPercentTest {
             durationSeconds = 7200.0,
             positionSeconds = 7100.0
         )
-        // remaining 100s / 7200s ≈ 1.4% → clamped to 5
         assertEquals(5, result)
     }
 
@@ -54,10 +54,17 @@ class TimelineDownloadPercentTest {
     }
 
     @Test
-    fun `parseSetting accepts percent suffix and blanks`() {
-        assertEquals(15, TimelineDownloadPercent.parseSetting(null))
-        assertEquals(15, TimelineDownloadPercent.parseSetting("  "))
-        assertEquals(20, TimelineDownloadPercent.parseSetting("20%"))
-        assertEquals(8, TimelineDownloadPercent.parseSetting(" 8 "))
+    fun `parseOptional treats blank as unset`() {
+        assertNull(TimelineDownloadPercent.parseOptional(null))
+        assertNull(TimelineDownloadPercent.parseOptional("  "))
+        assertEquals(20, TimelineDownloadPercent.parseOptional("20%"))
+    }
+
+    @Test
+    fun `resolve prefers personal override then global manager then plugin setting`() {
+        assertEquals(30, TimelineDownloadPercent.resolve("30", "10", 15))
+        assertEquals(15, TimelineDownloadPercent.resolve("", "10", 15))
+        assertEquals(10, TimelineDownloadPercent.resolve(null, "10", null))
+        assertEquals(15, TimelineDownloadPercent.resolve(null, null, null))
     }
 }

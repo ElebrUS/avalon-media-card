@@ -6,6 +6,8 @@ data class TorrServerState(
     val login: String?,
     val pass: String?,
     val useGst: Boolean,
-    val timelineBufferPercent: String
+    /** Personal override; empty means use [globalTimelineBufferPercent]. */
+    val timelineBufferPercent: String,
+    val globalTimelineBufferPercent: String
 )
 data class SearchEngineState(val use: Boolean, val url: String?, val key: String?)

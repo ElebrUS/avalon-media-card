@@ -31,8 +31,12 @@ class IntegrationsScreenPresenter(
         val passFlow = context.userSettings.observeString(userId, "torrserver_password", "")
         val useTorrServerFlow = context.userSettings.observeBoolean(userId, "use_torrserver", true)
         val useTorrServerGstFlow = context.userSettings.observeBoolean(userId, "use_torrserver_gst", false)
-        // Global (plugin system) setting — shared across all users.
-        val timelineBufferFlow = context.settings.observeString(
+        val userTimelineBufferFlow = context.userSettings.observeString(
+            userId,
+            TimelineDownloadPercent.SETTING_KEY,
+            ""
+        )
+        val globalTimelineBufferFlow = context.settings.observeString(
             TimelineDownloadPercent.SETTING_KEY,
             TimelineDownloadPercent.DEFAULT_TIMELINE_BUFFER_PERCENT.toString()
         )
@@ -49,17 +53,19 @@ class IntegrationsScreenPresenter(
 
         val torrCoreFlow = combine(useTorrServerFlow, hostFlow, loginFlow, passFlow, useTorrServerGstFlow) { useTorr, host, login, pass, useGst ->
             TorrServerState(
-                useTorr,
-                host,
-                login,
-                pass,
-                useGst,
-                TimelineDownloadPercent.DEFAULT_TIMELINE_BUFFER_PERCENT.toString()
+                use = useTorr,
+                host = host,
+                login = login,
+                pass = pass,
+                useGst = useGst,
+                timelineBufferPercent = "",
+                globalTimelineBufferPercent = TimelineDownloadPercent.DEFAULT_TIMELINE_BUFFER_PERCENT.toString()
             )
         }
-        val torrServerFlow = combine(torrCoreFlow, timelineBufferFlow) { core, timelineBuffer ->
+        val torrServerFlow = combine(torrCoreFlow, userTimelineBufferFlow, globalTimelineBufferFlow) { core, userBuffer, globalBuffer ->
             core.copy(
-                timelineBufferPercent = timelineBuffer
+                timelineBufferPercent = userBuffer.orEmpty(),
+                globalTimelineBufferPercent = globalBuffer
                     ?: TimelineDownloadPercent.DEFAULT_TIMELINE_BUFFER_PERCENT.toString()
             )
         }
@@ -153,14 +159,17 @@ class IntegrationsScreenPresenter(
                             key = TimelineDownloadPercent.SETTING_KEY,
                             label = context.i18n.t("settings.torrserver.timeline_buffer"),
                             value = torr.timelineBufferPercent,
-                            placeholder = context.i18n.t("settings.torrserver.timeline_buffer_placeholder"),
+                            placeholder = torr.globalTimelineBufferPercent,
                             isSensitive = false,
                             isEnabled = true
                         ),
                         SettingField.Info(
                             key = "torrserver_timeline_buffer_hint",
                             label = context.i18n.t("settings.torrserver.timeline_buffer"),
-                            description = context.i18n.t("settings.torrserver.timeline_buffer_hint")
+                            description = context.i18n.t(
+                                "settings.torrserver.timeline_buffer_hint",
+                                torr.globalTimelineBufferPercent
+                            )
                         ),
                         SettingField.TextField(
                             key = "torrserver_login",

@@ -30,9 +30,10 @@ class SaveTorrServerSettingsUseCase(
                 repository.saveSetting(userId, "use_torrserver_gst", it)
             }
             cmd.timelineBufferPercent?.let { raw ->
-                val normalized = TimelineDownloadPercent.parseSetting(raw).toString()
-                // Global only — shared by all users / shared TorrServer.
-                repository.saveGlobalSetting(TimelineDownloadPercent.SETTING_KEY, normalized)
+                // Personal override only. Blank clears the override → fall back to global admin value.
+                if (userId != null) {
+                    repository.saveUserSetting(userId, TimelineDownloadPercent.SETTING_KEY, raw.trim())
+                }
             }
             ActionResult.ShowNotification(context.i18n.t("status.settings_saved"), "success")
         } catch (e: Exception) {

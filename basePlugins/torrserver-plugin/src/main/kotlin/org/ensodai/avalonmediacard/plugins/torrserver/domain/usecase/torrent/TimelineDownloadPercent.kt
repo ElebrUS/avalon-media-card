@@ -6,20 +6,34 @@ import kotlin.math.roundToInt
  * Maps a user-facing **timeline** buffer (percent of runtime) onto TorrServer
  * [ReaderReadAHead], which is a percent of the torrent file around the current reader.
  *
- * File size is a poor proxy: VBR means bytes ≠ playback time. Duration + position
- * from the timeline is the right source. The result is still a file-window percent
- * because that is the only knob TorrServer exposes, but the conversion uses time.
+ * Resolution order for the requested percent:
+ * 1. personal user override (if set)
+ * 2. global admin / plugin system setting
+ * 3. [DEFAULT_TIMELINE_BUFFER_PERCENT]
  */
 object TimelineDownloadPercent {
     const val MIN_READER_READ_AHEAD = 5
     const val MAX_READER_READ_AHEAD = 100
     const val DEFAULT_TIMELINE_BUFFER_PERCENT = 15
-    /** Key under plugin settings (`plugin:torrserver-plugin:…`) and admin system settings. */
+    /** Key under user integration settings and plugin/admin system settings. */
     const val SETTING_KEY = "torrserver_timeline_buffer_percent"
 
+    /** Parses a required/global value; blank falls back to the default. */
     fun parseSetting(raw: String?): Int {
-        val digits = raw?.trim()?.removeSuffix("%")?.trim()?.toIntOrNull()
-        return (digits ?: DEFAULT_TIMELINE_BUFFER_PERCENT).coerceIn(0, 100)
+        return parseOptional(raw) ?: DEFAULT_TIMELINE_BUFFER_PERCENT
+    }
+
+    /** Parses an optional personal override; blank/null means “use global”. */
+    fun parseOptional(raw: String?): Int? {
+        val digits = raw?.trim()?.removeSuffix("%")?.trim().orEmpty()
+        if (digits.isEmpty()) return null
+        return digits.toIntOrNull()?.coerceIn(0, 100)
+    }
+
+    fun resolve(userOverrideRaw: String?, globalRaw: String?, globalFromManager: Int?): Int {
+        parseOptional(userOverrideRaw)?.let { return it }
+        if (globalFromManager != null) return globalFromManager.coerceIn(0, 100)
+        return parseSetting(globalRaw)
     }
 
     /**
