@@ -1,0 +1,19 @@
+{
+  "plugin_name": "Samsung TV Widget",
+  "plugin_description": "Registers a Tizen widget for Samsung Smart TV",
+  "settings.title": "Samsung TV Widget",
+  "settings.description": "Install Avalon on a Samsung Smart TV as a Tizen widget, URL Launcher app, or Media Station X start parameter. Set the LAN address of this server so the TV can open the web client.",
+  "settings.enabled": "Register Samsung TV widget",
+  "settings.public_url": "Public server URL for the TV",
+  "settings.widget_url": "Widget URL (URL Launcher)",
+  "settings.open_widget": "Open",
+  "settings.wgt_file": "Tizen package (.wgt)",
+  "settings.download_wgt": "Download",
+  "settings.preview_url": "Smart Hub preview JSON",
+  "settings.msx_url": "Media Station X start.json",
+  "settings.install_title": "How to install",
+  "settings.install_steps": "1) Enable Developer Mode on the TV (Apps → 1-2-3-4-5). 2) Install the .wgt via Tizen Studio / sdb, or add the Widget URL in URL Launcher. 3) Optional: point Media Station X to msx/start.json.",
+  "settings.save": "Save and register widget",
+  "status.widget_registered": "Samsung TV widget registered",
+  "preview.continue_watching": "Continue Watching"
+}

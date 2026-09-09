@@ -65,6 +65,15 @@ fun App() {
     val currentLanguage by appSettingsStorage.language.collectAsState(initial = "auto")
     val focusManager = LocalFocusManager.current
 
+    LaunchedEffect(Unit) {
+        val uiMode = getUrlQueryParameters()["ui"]
+        if (uiMode.equals("tv", ignoreCase = true) &&
+            appSettingsStorage.cachedUiModeOverride == UiModeOverride.AUTO
+        ) {
+            appSettingsStorage.saveUiModeOverride(UiModeOverride.TV)
+        }
+    }
+
     LaunchedEffect(currentLanguage) {
         setAppLocale(currentLanguage)
     }

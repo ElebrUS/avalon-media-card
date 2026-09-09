@@ -24,9 +24,10 @@ COPY docker-entrypoint.sh /app/docker-entrypoint.sh
 RUN chmod +x /app/docker-entrypoint.sh
 
 # Environment variables with sane defaults
-ENV PORT=8080 \
+    ENV PORT=8080 \
     DB_URL=jdbc:sqlite:/app/data/avalon.db \
     WEB_DIR=/app/web \
+    DATA_DIR=/app/data \
     ADMIN_USERNAME=admin \
     ADMIN_PASSWORD=admin \
     JAVA_OPTS="-XX:+UseG1GC -XX:MaxRAMPercentage=75.0"

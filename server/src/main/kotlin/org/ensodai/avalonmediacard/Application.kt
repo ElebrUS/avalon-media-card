@@ -33,6 +33,7 @@ import org.ensodai.avalonmediacard.plugin.PluginManager
 import org.ensodai.avalonmediacard.repository.SystemSettingsRepository
 import org.ensodai.avalonmediacard.repository.UserRepository
 import org.ensodai.avalonmediacard.routes.imageProxyRoutes
+import org.ensodai.avalonmediacard.routes.samsungWidgetRoutes
 import org.ensodai.avalonmediacard.routes.streamProxyRoutes
 import org.ensodai.avalonmediacard.rpc.*
 import org.ensodai.avalonmediacard.security.RpcSessionContext
@@ -135,6 +136,7 @@ fun Application.module() {
     routing {
         imageProxyRoutes(safeProxyHttpClient)
         streamProxyRoutes(streamTokenService, safeProxyHttpClient)
+        samsungWidgetRoutes(pluginManager)
 
         val webDir = File(EnvHelper.getEnv("WEB_DIR") ?: "web")
         if (webDir.exists() && webDir.isDirectory) {

@@ -1,0 +1,40 @@
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+
+plugins {
+    alias(libs.plugins.kotlinJvm)
+    kotlin("plugin.serialization") version "2.3.21"
+}
+
+dependencies {
+    implementation(libs.avalon.core.contract)
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
+    testImplementation(libs.kotlin.testJunit)
+}
+
+tasks.named<Jar>("jar") {
+    archiveFileName.set("samsung-tv-plugin.jar")
+}
+
+val copyPluginJar = tasks.register<Copy>("copyPluginJar") {
+    from(tasks.named("jar"))
+    into(rootProject.file("server/plugins"))
+}
+
+tasks.named("build") {
+    dependsOn(copyPluginJar)
+}
+
+tasks.withType<KotlinCompile>().configureEach {
+    compilerOptions {
+        freeCompilerArgs.add("-opt-in=kotlin.uuid.ExperimentalUuidApi")
+    }
+}
+
+tasks.test {
+    testLogging {
+        events("passed", "skipped", "failed")
+        showExceptions = true
+        showCauses = true
+        showStackTraces = true
+    }
+}
