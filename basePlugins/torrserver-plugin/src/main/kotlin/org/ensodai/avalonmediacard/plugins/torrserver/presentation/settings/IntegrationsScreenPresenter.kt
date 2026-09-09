@@ -5,6 +5,7 @@ import org.ensodai.avalonmediacard.contract.plugins.PluginContext
 import org.ensodai.avalonmediacard.contract.plugins.ScreenSlots
 import org.ensodai.avalonmediacard.contract.slot.*
 import org.ensodai.avalonmediacard.plugins.torrserver.domain.model.*
+import org.ensodai.avalonmediacard.plugins.torrserver.domain.usecase.torrent.TimelineDownloadPercent
 import org.ensodai.avalonmediacard.plugins.torrserver.presentation.ValidationStateTracker
 import org.ensodai.avalonmediacard.plugins.torrserver.presentation.settings.model.TorrServerState
 import org.ensodai.avalonmediacard.plugins.torrserver.presentation.settings.model.SearchEngineState
@@ -30,6 +31,11 @@ class IntegrationsScreenPresenter(
         val passFlow = context.userSettings.observeString(userId, "torrserver_password", "")
         val useTorrServerFlow = context.userSettings.observeBoolean(userId, "use_torrserver", true)
         val useTorrServerGstFlow = context.userSettings.observeBoolean(userId, "use_torrserver_gst", false)
+        // Global (plugin system) setting — shared across all users.
+        val timelineBufferFlow = context.settings.observeString(
+            TimelineDownloadPercent.SETTING_KEY,
+            TimelineDownloadPercent.DEFAULT_TIMELINE_BUFFER_PERCENT.toString()
+        )
 
         val useProwlarrFlow = context.userSettings.observeBoolean(userId, "use_prowlarr", false)
         val prowlarrUrlFlow = context.userSettings.observeString(userId, "prowlarr_url", "http://localhost:9696")
@@ -41,8 +47,21 @@ class IntegrationsScreenPresenter(
 
         val legacyEngineFlow = context.userSettings.observeString(userId, "torrent_search_engine", "")
 
-        val torrServerFlow = combine(useTorrServerFlow, hostFlow, loginFlow, passFlow, useTorrServerGstFlow) { useTorr, host, login, pass, useGst ->
-            TorrServerState(useTorr, host, login, pass, useGst)
+        val torrCoreFlow = combine(useTorrServerFlow, hostFlow, loginFlow, passFlow, useTorrServerGstFlow) { useTorr, host, login, pass, useGst ->
+            TorrServerState(
+                useTorr,
+                host,
+                login,
+                pass,
+                useGst,
+                TimelineDownloadPercent.DEFAULT_TIMELINE_BUFFER_PERCENT.toString()
+            )
+        }
+        val torrServerFlow = combine(torrCoreFlow, timelineBufferFlow) { core, timelineBuffer ->
+            core.copy(
+                timelineBufferPercent = timelineBuffer
+                    ?: TimelineDownloadPercent.DEFAULT_TIMELINE_BUFFER_PERCENT.toString()
+            )
         }
         val prowlarrFlow = combine(useProwlarrFlow, prowlarrUrlFlow, prowlarrKeyFlow) { useProwl, url, key ->
             SearchEngineState(useProwl, url, key)
@@ -129,6 +148,19 @@ class IntegrationsScreenPresenter(
                             label = context.i18n.t("settings.torrserver.gst_transcode"),
                             value = torr.useGst,
                             onChangeAction = SaveTorrServerSettingsCommand()
+                        ),
+                        SettingField.TextField(
+                            key = TimelineDownloadPercent.SETTING_KEY,
+                            label = context.i18n.t("settings.torrserver.timeline_buffer"),
+                            value = torr.timelineBufferPercent,
+                            placeholder = context.i18n.t("settings.torrserver.timeline_buffer_placeholder"),
+                            isSensitive = false,
+                            isEnabled = true
+                        ),
+                        SettingField.Info(
+                            key = "torrserver_timeline_buffer_hint",
+                            label = context.i18n.t("settings.torrserver.timeline_buffer"),
+                            description = context.i18n.t("settings.torrserver.timeline_buffer_hint")
                         ),
                         SettingField.TextField(
                             key = "torrserver_login",
