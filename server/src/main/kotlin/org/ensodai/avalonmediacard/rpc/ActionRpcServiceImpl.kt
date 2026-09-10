@@ -4,7 +4,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.ensodai.avalonmediacard.contract.rpc.ActionRpcService
 import org.ensodai.avalonmediacard.contract.auth.AuthState
-import org.ensodai.avalonmediacard.contract.i18n.PluginLocaleElement
 import org.ensodai.avalonmediacard.contract.slot.ActionResult
 import org.ensodai.avalonmediacard.contract.slot.ServerAction
 import org.ensodai.avalonmediacard.plugin.PluginManager
@@ -33,7 +32,7 @@ class ActionRpcServiceImpl(
     override suspend fun handleAction(action: ServerAction): ActionResult {
         val userId = currentUserId() ?: return ActionResult.Error(401, "Not authorized")
         val userLocale = userSettingsRepository.getUserLocale(userId).takeIf { it != "auto" && it.isNotBlank() } ?: "ru"
-        return withContext(PluginLocaleElement(userLocale)) {
+        return withContext(session.pluginCoroutineContext(userLocale, userId)) {
             pluginManager.handleAction(action, userId)
         }
     }
