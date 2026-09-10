@@ -172,7 +172,7 @@ docker compose up -d
 
 ### Step 1.5: Lampac + Accsdb (optional)
 
-The **lampac-adapter-plugin** talks to a [Lampac](https://github.com/immisterio/Lampac) instance for online balancers. If Lampac has **Accsdb** enabled, Avalon must send an identity on every request.
+The **lampac-adapter-plugin** talks to a [Lampac](https://github.com/lampac-nextgen/lampac) instance for online balancers. If Lampac has **Accsdb** enabled, Avalon must send an identity on every request.
 
 #### Lampac side (`init.conf`)
 
