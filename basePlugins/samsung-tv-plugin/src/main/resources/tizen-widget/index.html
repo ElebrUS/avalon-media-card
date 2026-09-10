@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Avalon MediaCard</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div id="setup" class="setup hidden">
+    <div class="card">
+        <div class="logo">Avalon</div>
+        <h1>Samsung TV</h1>
+        <p>Enter the Avalon server address on your local network.</p>
+        <input id="server-url" type="text" value="%%AVALON_SERVER_URL%%" placeholder="http://192.168.1.10:8080" autofocus>
+        <button id="connect-btn" type="button">Open Avalon</button>
+        <p class="hint">The TV must be on the same network as the server.</p>
+    </div>
+</div>
+<script src="launcher.js"></script>
+</body>
+</html>

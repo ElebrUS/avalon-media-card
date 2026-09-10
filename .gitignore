@@ -6,6 +6,7 @@ build/
 **/build/
 !src/**/build/
 .kotlin/
+avalon-media-card-core-contract/
 kotlin-js-store/*
 !kotlin-js-store/**/
 !kotlin-js-store/**/yarn.lock
@@ -40,6 +41,9 @@ xcuserdata/
 # 🌐 Web / Node.js
 # ==========================================
 node_modules/
+web/widgets/
+web/samsung-widget/
+**/samsung-widget/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*

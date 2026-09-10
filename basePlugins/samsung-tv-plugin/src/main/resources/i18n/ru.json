@@ -1,0 +1,19 @@
+{
+  "plugin_name": "Виджет Samsung TV",
+  "plugin_description": "Автономный Tizen-виджет для Samsung Smart TV. Положите JAR в plugins/ — правки сервера не нужны.",
+  "settings.title": "Виджет Samsung TV",
+  "settings.description": "Самостоятельный плагин: сам публикует Tizen-виджет в статику веб-клиента. Если адрес не задан, берётся домен текущего запроса. Иначе укажите LAN-URL, доступный телевизору. Установите /widgets/samsung.wgt, добавьте URL виджета в URL Launcher или укажите Media Station X на /widgets/msx/start.json.",
+  "settings.enabled": "Зарегистрировать виджет Samsung TV",
+  "settings.public_url": "Публичный URL сервера для телевизора (необязательно)",
+  "settings.widget_url": "URL виджета (URL Launcher)",
+  "settings.open_widget": "Открыть",
+  "settings.wgt_file": "Пакет Tizen (.wgt)",
+  "settings.download_wgt": "Скачать",
+  "settings.preview_url": "JSON превью Smart Hub",
+  "settings.msx_url": "Media Station X start.json",
+  "settings.install_title": "Как установить",
+  "settings.install_steps": "1) Включите режим разработчика на ТВ (Apps → 1-2-3-4-5). 2) Установите /widgets/samsung.wgt через Tizen Studio / sdb или добавьте URL виджета в URL Launcher. 3) По желанию укажите Media Station X на /widgets/msx/start.json.",
+  "settings.save": "Сохранить и зарегистрировать виджет",
+  "status.widget_registered": "Виджет Samsung TV зарегистрирован",
+  "preview.continue_watching": "Продолжить просмотр"
+}
