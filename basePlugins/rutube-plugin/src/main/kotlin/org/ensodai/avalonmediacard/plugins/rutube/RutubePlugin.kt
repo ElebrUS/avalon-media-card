@@ -24,10 +24,17 @@ class RutubePlugin : AvalonPlugin {
 
     override val id: String = "rutube-plugin"
     override val name: String = "Rutube"
-    override val version: String = "1.0.0"
+    override val version: String = "1.1.0"
     override val author: String = "Avalon Media Card"
 
     private lateinit var logger: PluginLogger
+
+    companion object {
+        val STREAM_HEADERS: Map<String, String> = mapOf(
+            "Referer" to "https://rutube.ru/",
+            "Origin" to "https://rutube.ru"
+        )
+    }
 
     override fun onInitialize(context: PluginContext) {
         logger = context.logger
@@ -50,7 +57,7 @@ class RutubePlugin : AvalonPlugin {
         }
 
         context.streams.onPrepare { stream, _ ->
-            if (stream.url.contains("/play/embed/") || stream.url.isBlank()) {
+            val resolvedStream = if (stream.url.contains("/play/embed/") || stream.url.isBlank()) {
                 val videoId = stream.id.removePrefix("rutube_ep_").removePrefix("rutube_")
                 val streamInfo = repository.getStreamInfo(videoId)
                 if (streamInfo != null) {
@@ -65,6 +72,7 @@ class RutubePlugin : AvalonPlugin {
             } else {
                 stream
             }
+            resolvedStream.copy(headers = STREAM_HEADERS)
         }
 
         context.streams.onPlaylist { key, sourceId, userId ->

@@ -25,10 +25,17 @@ class VkPlugin : AvalonPlugin {
 
     override val id: String = "vk-video-plugin"
     override val name: String = "VK Video"
-    override val version: String = "1.0.0"
+    override val version: String = "1.1.0"
     override val author: String = "Avalon Media Card"
 
     private lateinit var logger: PluginLogger
+
+    companion object {
+        val STREAM_HEADERS: Map<String, String> = mapOf(
+            "Referer" to "https://vkvideo.ru/",
+            "Origin" to "https://vkvideo.ru"
+        )
+    }
 
     override fun onInitialize(context: PluginContext) {
         logger = context.logger
@@ -51,8 +58,8 @@ class VkPlugin : AvalonPlugin {
         }
 
         context.streams.onPrepare { stream, _ ->
-            // Direct VK Video MP4 / HLS streams are ready out of the box
-            stream
+            // Direct VK Video MP4 / HLS streams are ready out of the box with proper referer & origin
+            stream.copy(headers = STREAM_HEADERS)
         }
 
         context.streams.onPlaylist { key, sourceId, userId ->
