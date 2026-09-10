@@ -20,16 +20,33 @@ import org.ensodai.avalonmediacard.plugins.lampac.data.network.dto.LampacRespons
  *
  * @property httpClient The host platform Ktor HTTP client.
  * @property logger The plugin-isolated logger.
- * @property baseUrl The root API hostname (defaults to `http://localhost:9118`).
+ * @property baseUrl The root API hostname (from env `LAMPAC_HOST`, default `http://localhost:9118`).
+ * @property accsdb Accsdb identity query params (`LAMPAC_UID` / `LAMPAC_TOKEN` / `LAMPAC_ACCOUNT_EMAIL`).
  */
 class LampacApiClient(
     private val httpClient: HttpClient,
     private val logger: PluginLogger,
-    private val baseUrl: String = "http://localhost:9118"
+    private val baseUrl: String,
+    private val accsdb: LampacAccsdbCredentials = LampacAccsdbCredentials.EMPTY
 ) {
     private val json = Json {
         ignoreUnknownKeys = true
         isLenient = true
+    }
+
+    private fun HttpRequestBuilder.applyAccsdb(urlHint: String = "") {
+        fun missing(name: String): Boolean =
+            !urlHint.contains("$name=")
+
+        if (!accsdb.uid.isNullOrBlank() && missing("uid")) {
+            parameter("uid", accsdb.uid)
+        }
+        if (!accsdb.token.isNullOrBlank() && missing("token")) {
+            parameter("token", accsdb.token)
+        }
+        if (!accsdb.accountEmail.isNullOrBlank() && missing("account_email")) {
+            parameter("account_email", accsdb.accountEmail)
+        }
     }
 
     /**
@@ -44,7 +61,9 @@ class LampacApiClient(
      */
     suspend fun ping(): Boolean {
         return try {
-            val response = httpClient.get("$baseUrl/reqinfo")
+            val response = httpClient.get("$baseUrl/reqinfo") {
+                applyAccsdb()
+            }
             response.status.isSuccess()
         } catch (e: Exception) {
             logger.warn("Lampac: Gateway ping failed at $baseUrl: ${e.message}")
@@ -83,6 +102,7 @@ class LampacApiClient(
                 if (isAnime) parameter("anime", 1)
                 if (!originalLanguage.isNullOrBlank()) parameter("original_language", originalLanguage)
                 parameter("rchtype", "cors")
+                applyAccsdb()
                 header(HttpHeaders.Accept, "application/json")
             }
 
@@ -142,6 +162,7 @@ class LampacApiClient(
                 parameter("source", "tmdb")
                 parameter("rchtype", "cors")
                 parameter("rjson", "true")
+                applyAccsdb()
                 header(HttpHeaders.Accept, "application/json")
             }
 
@@ -191,6 +212,7 @@ class LampacApiClient(
                 season?.let { if (!targetUrl.contains("s=")) parameter("s", it) }
                 episode?.let { if (!targetUrl.contains("e=")) parameter("e", it) }
                 translationId?.let { if (!targetUrl.contains("t=")) parameter("t", it) }
+                applyAccsdb(targetUrl)
                 header(HttpHeaders.Accept, "application/json")
             }
 
@@ -225,6 +247,7 @@ class LampacApiClient(
             val response = httpClient.get("$baseUrl/api/v2/torrents") {
                 parameter("title", title)
                 year?.let { parameter("year", it) }
+                applyAccsdb()
                 header(HttpHeaders.Accept, "application/json")
             }
 

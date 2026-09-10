@@ -4,11 +4,11 @@ set -e
 # Обеспечиваем существование папок монтирования
 mkdir -p /app/data /app/plugins
 
-# Если папка плагинов пуста (например, при первом монтировании тома с хоста),
-# инициализируем ее базовыми плагинами из контейнера
-if [ -d /app/default-plugins ] && [ -z "$(ls -A /app/plugins 2>/dev/null)" ]; then
-    echo "🧩 [Avalon Entrypoint] Initializing default plugins in /app/plugins..."
-    cp -r /app/default-plugins/* /app/plugins/ 2>/dev/null || true
+# Синхронизируем базовые плагины из образа в /app/plugins (overwrite).
+# Кастомные JAR, которых нет в default-plugins, не трогаем.
+if [ -d /app/default-plugins ] && [ -n "$(ls -A /app/default-plugins 2>/dev/null)" ]; then
+    echo "🧩 [Avalon Entrypoint] Syncing default plugins into /app/plugins..."
+    cp -f /app/default-plugins/* /app/plugins/ 2>/dev/null || true
 fi
 
 # Удаляем устаревший collaps-plugin, если остался от предыдущих запусков
