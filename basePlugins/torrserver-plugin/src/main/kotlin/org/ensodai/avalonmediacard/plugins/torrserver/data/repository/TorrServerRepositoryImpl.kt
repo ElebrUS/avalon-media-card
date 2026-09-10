@@ -37,7 +37,12 @@ class TorrServerRepositoryImpl(
         return apiClient.getGstProbe(hash, fileIndex, userId)
     }
 
-    override suspend fun applyReaderReadAhead(percent: Int, userId: Uuid?) {
-        apiClient.applyReaderReadAhead(percent, userId)
+    override suspend fun applyTimelineCachePlan(
+        cacheSizeBytes: Long,
+        readerReadAhead: Int,
+        preloadCachePercent: Int,
+        userId: Uuid?
+    ) {
+        apiClient.applyTimelineCachePlan(cacheSizeBytes, readerReadAhead, preloadCachePercent, userId)
     }
 }

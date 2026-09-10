@@ -37,7 +37,8 @@ class PrepareStreamUseCase(
         val useGst: Boolean,
         val audioTracks: List<AudioTrack>,
         val subtitleTracks: List<SubtitleTrack>,
-        val probeDurationSeconds: Double? = null
+        val probeDurationSeconds: Double? = null,
+        val probeFileSizeBytes: Long? = null
     )
 
     suspend fun execute(stream: MediaStream, userId: Uuid?): MediaStream {
@@ -64,9 +65,16 @@ class PrepareStreamUseCase(
             fileIndex = resolveTargetFileIndex(files, hash, parsed.season, parsed.episode, stream.title, parsed.fileIndex)
         }
 
-        val fileName = files.find { it.id == fileIndex }?.path ?: "video.mp4"
+        val targetFile = files.find { it.id == fileIndex }
+        val fileName = targetFile?.path ?: "video.mp4"
         val resolution = resolvePlaybackMethod(hash, fileIndex, fileName, userId)
-        applyTimelineBuffer(stream, resolution, userId)
+        applyTimelineBuffer(
+            stream = stream,
+            resolution = resolution,
+            fileSizeBytes = targetFile?.length?.takeIf { it > 0 }
+                ?: resolution.probeFileSizeBytes,
+            userId = userId
+        )
 
         val finalUrl = torrServerRepository.buildStreamUrl(
             hash = hash,
@@ -236,6 +244,7 @@ class PrepareStreamUseCase(
         val audioTracks = mutableListOf<AudioTrack>()
         val subtitleTracks = mutableListOf<SubtitleTrack>()
         var probeDurationSeconds: Double? = null
+        var probeFileSizeBytes: Long? = null
         var probeInfo: TorrServerGstProbeInfo? = null
 
         if (useGstRequested) {
@@ -244,6 +253,7 @@ class PrepareStreamUseCase(
             if (durationNs != null && durationNs > 0L) {
                 probeDurationSeconds = durationNs / 1_000_000_000.0
             }
+            probeFileSizeBytes = probeInfo?.fileSize?.takeIf { it > 0 }
             if (!isGstSupported(probeInfo, fileName)) {
                 context.logger.warn("GST probe провалился или контейнер/кодек (${fileName.substringAfterLast('.', "")}) не поддерживается GStreamer HLS. Фоллбэк на обычный поток.")
                 actualUseGst = false
@@ -260,12 +270,13 @@ class PrepareStreamUseCase(
             }
         }
         
-        return PlaybackResolution(actualUseGst, audioTracks, subtitleTracks, probeDurationSeconds)
+        return PlaybackResolution(actualUseGst, audioTracks, subtitleTracks, probeDurationSeconds, probeFileSizeBytes)
     }
 
     private suspend fun applyTimelineBuffer(
         stream: MediaStream,
         resolution: PlaybackResolution,
+        fileSizeBytes: Long?,
         userId: Uuid?
     ) {
         val timelinePercent = TimelineDownloadPercent.resolve(
@@ -278,18 +289,25 @@ class PrepareStreamUseCase(
 
         val durationSeconds = stream.durationSeconds?.takeIf { it > 0.0 }
             ?: resolution.probeDurationSeconds
-
         val positionSeconds = stream.watchedProgressSeconds?.toDouble()?.takeIf { it > 0.0 }
-        val readerPercent = TimelineDownloadPercent.readerReadAhead(
+        val plan = TimelineDownloadPercent.cachePlan(
             timelineBufferPercent = timelinePercent,
+            fileSizeBytes = fileSizeBytes,
             durationSeconds = durationSeconds,
             positionSeconds = positionSeconds
         )
         context.logger.info(
-            "Буфер TorrServer по таймлайну: $timelinePercent% длительности " +
-                "(t=${positionSeconds ?: 0.0}s / ${durationSeconds ?: "?"}s) → ReaderReadAHead=$readerPercent%"
+            "Буфер TorrServer по таймлайну: $timelinePercent% " +
+                "(file=${fileSizeBytes ?: "?"}B, t=${positionSeconds ?: 0.0}s / ${durationSeconds ?: "?"}s) → " +
+                "CacheSize=${plan.cacheSizeBytes / (1024 * 1024)}MB, " +
+                "ReaderReadAHead=${plan.readerReadAhead}%, Preload=${plan.preloadCachePercent}%"
         )
-        torrServerRepository.applyReaderReadAhead(readerPercent, userId)
+        torrServerRepository.applyTimelineCachePlan(
+            cacheSizeBytes = plan.cacheSizeBytes,
+            readerReadAhead = plan.readerReadAhead,
+            preloadCachePercent = plan.preloadCachePercent,
+            userId = userId
+        )
     }
 
     private fun isGstSupported(probeInfo: TorrServerGstProbeInfo?, fileName: String): Boolean {

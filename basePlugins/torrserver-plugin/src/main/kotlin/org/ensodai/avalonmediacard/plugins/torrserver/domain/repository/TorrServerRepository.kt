@@ -11,5 +11,10 @@ interface TorrServerRepository {
     suspend fun dropTorrent(hash: String, userId: Uuid?)
     suspend fun buildStreamUrl(hash: String, fileIndex: Int?, filePath: String, userId: Uuid?, useGst: Boolean = false): String
     suspend fun getGstProbe(hash: String, fileIndex: Int?, userId: Uuid?): org.ensodai.avalonmediacard.plugins.torrserver.domain.model.TorrServerGstProbeInfo?
-    suspend fun applyReaderReadAhead(percent: Int, userId: Uuid?)
+    suspend fun applyTimelineCachePlan(
+        cacheSizeBytes: Long,
+        readerReadAhead: Int,
+        preloadCachePercent: Int,
+        userId: Uuid?
+    )
 }

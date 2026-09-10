@@ -270,8 +270,15 @@ class TorrServerApiClient(
         return null
     }
 
-    suspend fun applyReaderReadAhead(percent: Int, userId: kotlin.uuid.Uuid?) {
-        val clamped = percent.coerceIn(5, 100)
+    suspend fun applyTimelineCachePlan(
+        cacheSizeBytes: Long,
+        readerReadAhead: Int,
+        preloadCachePercent: Int,
+        userId: kotlin.uuid.Uuid?
+    ) {
+        val cacheSize = cacheSizeBytes.coerceAtLeast(1L)
+        val readAhead = readerReadAhead.coerceIn(5, 100)
+        val preload = preloadCachePercent.coerceIn(0, 100)
         try {
             val torrserverUrl = getTorrserverUrl(userId)
             val auth = getAuthHeader(userId)
@@ -287,7 +294,11 @@ class TorrServerApiClient(
             }
             val current = json.parseToJsonElement(getResponse.body<String>()).jsonObject
             val updated = JsonObject(current.toMutableMap().apply {
-                put("ReaderReadAHead", JsonPrimitive(clamped))
+                // CacheSize bounds how much of the torrent can stay downloaded.
+                put("CacheSize", JsonPrimitive(cacheSize))
+                // ReaderReadAHead is a share of CacheSize ahead of the playhead — not of the file.
+                put("ReaderReadAHead", JsonPrimitive(readAhead))
+                put("PreloadCache", JsonPrimitive(preload))
             })
             val setPayload = JsonObject(
                 mapOf(
@@ -302,12 +313,15 @@ class TorrServerApiClient(
                 timeout { requestTimeoutMillis = 8000 }
             }
             if (setResponse.status == HttpStatusCode.OK) {
-                logger.info("TorrServer ReaderReadAHead обновлён до $clamped% (окно по таймлайну)")
+                logger.info(
+                    "TorrServer cache limit: CacheSize=${cacheSize / (1024 * 1024)}MB, " +
+                        "ReaderReadAHead=$readAhead%, PreloadCache=$preload%"
+                )
             } else {
-                logger.warn("TorrServer отклонил обновление ReaderReadAHead: HTTP ${setResponse.status}")
+                logger.warn("TorrServer отклонил обновление cache plan: HTTP ${setResponse.status}")
             }
         } catch (e: Exception) {
-            logger.warn("Не удалось обновить ReaderReadAHead TorrServer: ${e.message}")
+            logger.warn("Не удалось обновить cache plan TorrServer: ${e.message}")
         }
     }
 }
