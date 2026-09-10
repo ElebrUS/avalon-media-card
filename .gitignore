@@ -41,6 +41,7 @@ xcuserdata/
 # 🌐 Web / Node.js
 # ==========================================
 node_modules/
+web/widgets/
 web/samsung-widget/
 **/samsung-widget/
 npm-debug.log*

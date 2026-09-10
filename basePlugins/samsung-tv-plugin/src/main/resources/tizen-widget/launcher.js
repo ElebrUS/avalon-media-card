@@ -52,7 +52,7 @@
         if (typeof webapis === "undefined" || !webapis.preview || !webapis.preview.setPreviewData) {
             return;
         }
-        var previewUrl = serverUrl.replace(/\/+$/, "") + "/samsung-widget/preview.json";
+        var previewUrl = serverUrl.replace(/\/+$/, "") + "/widgets/preview.json";
         fetchJson(previewUrl, function (data) {
             try {
                 webapis.preview.setPreviewData(JSON.stringify(data));

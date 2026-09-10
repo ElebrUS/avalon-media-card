@@ -4,9 +4,9 @@ import java.io.File
 
 object SamsungTvPaths {
     const val PLUGIN_ID = "samsung-tv-plugin"
-    const val PUBLIC_DIR = "samsung-widget"
+    const val PUBLIC_DIR = "widgets"
     const val PUBLIC_PATH = "/$PUBLIC_DIR"
-    const val WGT_FILENAME = "avalon-samsung.wgt"
+    const val WGT_FILENAME = "samsung.wgt"
     const val PREVIEW_FILENAME = "preview.json"
     const val CONFIG_FILENAME = "config.xml"
     const val INDEX_FILENAME = "index.html"

@@ -23,14 +23,14 @@ class TizenWidgetManifestTest {
             xml,
             "http://samsung.com/tv/metadata/preview/preview_json"
         )
-        assertContains(xml, "http://192.168.1.10:8080/samsung-widget/preview.json")
+        assertContains(xml, "http://192.168.1.10:8080/widgets/preview.json")
         assertContains(xml, "version=\"1.0.0\"")
     }
 
     @Test
     fun msxStartPointsAtGeneratedMenu() {
         val start = TizenWidgetManifest.renderMsxStart("http://10.0.0.5:8080/")
-        assertContains(start, "http://10.0.0.5:8080/samsung-widget/msx/menu.json")
+        assertContains(start, "http://10.0.0.5:8080/widgets/msx/menu.json")
     }
 }
 
@@ -136,10 +136,10 @@ class SamsungTvPathsTest {
     @Test
     fun publicResourceUrlJoinsBaseAndPath() {
         assertEquals(
-            "http://192.168.1.10:8080/samsung-widget/",
-            SamsungTvPaths.publicResourceUrl("http://192.168.1.10:8080", "/samsung-widget/")
+            "http://192.168.1.10:8080/widgets/samsung.wgt",
+            SamsungTvPaths.publicResourceUrl("http://192.168.1.10:8080", "/widgets/samsung.wgt")
         )
-        assertEquals("/samsung-widget/preview.json", SamsungTvPaths.publicResourceUrl("", "/samsung-widget/preview.json"))
+        assertEquals("/widgets/msx/start.json", SamsungTvPaths.publicResourceUrl("", "/widgets/msx/start.json"))
     }
 
     @Test
@@ -153,7 +153,7 @@ class SamsungTvPathsTest {
                 webDirEnv = null,
                 workingDir = tmp
             )
-            assertEquals(File(web, "samsung-widget").canonicalFile, out.canonicalFile)
+            assertEquals(File(web, "widgets").canonicalFile, out.canonicalFile)
         } finally {
             tmp.deleteRecursively()
         }
@@ -171,7 +171,7 @@ class SamsungTvPathsTest {
                 webDirEnv = dist.absolutePath,
                 workingDir = tmp
             )
-            assertEquals(File(dist, "samsung-widget").canonicalFile, out.canonicalFile)
+            assertEquals(File(dist, "widgets").canonicalFile, out.canonicalFile)
         } finally {
             tmp.deleteRecursively()
         }
@@ -188,7 +188,7 @@ class SamsungTvPathsTest {
                 webDirEnv = null,
                 workingDir = cwd
             )
-            assertEquals(File(plugins, "samsung-widget").canonicalFile, out.canonicalFile)
+            assertEquals(File(plugins, "widgets").canonicalFile, out.canonicalFile)
         } finally {
             tmp.deleteRecursively()
         }
