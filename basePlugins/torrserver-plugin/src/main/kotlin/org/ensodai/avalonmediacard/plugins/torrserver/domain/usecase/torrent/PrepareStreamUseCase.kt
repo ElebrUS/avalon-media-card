@@ -46,16 +46,34 @@ class PrepareStreamUseCase(
             !stream.sourceName.contains("TorrServer", ignoreCase = true) &&
             !stream.url.contains("/stream/video") &&
             !stream.url.contains("magnet:") &&
-            !stream.url.endsWith(".torrent")
+            !stream.url.endsWith(".torrent") &&
+            !stream.url.contains("/gst/")
         ) {
+            context.logger.warn("[torrserver-cache] skip prepare: source=${stream.sourceName} type=${stream.type}")
             return stream
         }
 
         val logger = context.logger
-        logger.info("Подготовка торрент-стрима: ${stream.title}")
+        logger.warn("[torrserver-cache] prepare start: title=${stream.title} source=${stream.sourceName}")
+        println("[torrserver-cache] prepare start: title=${stream.title}")
 
         val parsed = parseStreamUrl(stream.url)
         val hash = getOrAddTorrent(parsed, userId)
+
+        // Apply cache limit BEFORE /stream?...&stat (getFiles), otherwise TorrServer may start a full download
+        // with the previous (possibly unbounded) CacheSize.
+        val knownMappingSize = context.torrentMappings.getMappingsByHash(hash)
+            .mapNotNull { it.fileSize }
+            .maxOrNull()
+            ?.takeIf { it > 0 }
+        applyTimelineBuffer(
+            stream = stream,
+            resolution = PlaybackResolution(useGst = false, audioTracks = emptyList(), subtitleTracks = emptyList()),
+            fileSizeBytes = knownMappingSize ?: stream.sizeBytes?.takeIf { it > 0 },
+            userId = userId,
+            stage = "before-stat"
+        )
+
         val files = torrServerRepository.getFiles(hash, userId) ?: emptyList()
 
         var fileIndex = parsed.fileIndex ?: 1
@@ -72,8 +90,10 @@ class PrepareStreamUseCase(
             stream = stream,
             resolution = resolution,
             fileSizeBytes = targetFile?.length?.takeIf { it > 0 }
-                ?: resolution.probeFileSizeBytes,
-            userId = userId
+                ?: resolution.probeFileSizeBytes
+                ?: knownMappingSize,
+            userId = userId,
+            stage = "before-play"
         )
 
         val finalUrl = torrServerRepository.buildStreamUrl(
@@ -85,8 +105,8 @@ class PrepareStreamUseCase(
         )
 
         val ext = fileName.substringAfterLast('.', "mp4")
-        logger.info("Торрент подготовлен. Ссылка для плеера: $finalUrl (Формат: $ext, Эпизод index: $fileIndex, GST: ${resolution.useGst})")
-        logger.info("Подготовка завершена. Найдено аудио: ${resolution.audioTracks.size}, субтитров: ${resolution.subtitleTracks.size}")
+        logger.warn("[torrserver-cache] prepare done: index=$fileIndex gst=${resolution.useGst} ext=$ext")
+        println("[torrserver-cache] prepare done: index=$fileIndex gst=${resolution.useGst}")
 
         return stream.copy(
             url = finalUrl,
@@ -277,7 +297,8 @@ class PrepareStreamUseCase(
         stream: MediaStream,
         resolution: PlaybackResolution,
         fileSizeBytes: Long?,
-        userId: Uuid?
+        userId: Uuid?,
+        stage: String
     ) {
         val timelinePercent = TimelineDownloadPercent.resolve(
             userOverrideRaw = userId?.let { context.userSettings.getString(it, TimelineDownloadPercent.SETTING_KEY) },
@@ -296,12 +317,13 @@ class PrepareStreamUseCase(
             durationSeconds = durationSeconds,
             positionSeconds = positionSeconds
         )
-        context.logger.info(
-            "Буфер TorrServer по таймлайну: $timelinePercent% " +
-                "(file=${fileSizeBytes ?: "?"}B, t=${positionSeconds ?: 0.0}s / ${durationSeconds ?: "?"}s) → " +
-                "CacheSize=${plan.cacheSizeBytes / (1024 * 1024)}MB, " +
-                "ReaderReadAHead=${plan.readerReadAhead}%, Preload=${plan.preloadCachePercent}%"
-        )
+        val msg =
+            "[torrserver-cache][$stage] percent=$timelinePercent% file=${fileSizeBytes ?: "?"}B " +
+                "t=${positionSeconds ?: 0.0}s/${durationSeconds ?: "?"}s → " +
+                "CacheSize=${plan.cacheSizeBytes / (1024 * 1024)}MB " +
+                "ReadAHead=${plan.readerReadAhead}% Preload=${plan.preloadCachePercent}%"
+        context.logger.warn(msg)
+        println(msg)
         torrServerRepository.applyTimelineCachePlan(
             cacheSizeBytes = plan.cacheSizeBytes,
             readerReadAhead = plan.readerReadAhead,

@@ -313,15 +313,20 @@ class TorrServerApiClient(
                 timeout { requestTimeoutMillis = 8000 }
             }
             if (setResponse.status == HttpStatusCode.OK) {
-                logger.info(
-                    "TorrServer cache limit: CacheSize=${cacheSize / (1024 * 1024)}MB, " +
-                        "ReaderReadAHead=$readAhead%, PreloadCache=$preload%"
-                )
+                val msg =
+                    "[torrserver-cache] TorrServer OK CacheSize=${cacheSize / (1024 * 1024)}MB " +
+                        "ReaderReadAHead=$readAhead% PreloadCache=$preload%"
+                logger.warn(msg)
+                println(msg)
             } else {
-                logger.warn("TorrServer отклонил обновление cache plan: HTTP ${setResponse.status}")
+                val msg = "[torrserver-cache] TorrServer REJECT cache plan: HTTP ${setResponse.status}"
+                logger.warn(msg)
+                println(msg)
             }
         } catch (e: Exception) {
-            logger.warn("Не удалось обновить cache plan TorrServer: ${e.message}")
+            val msg = "[torrserver-cache] TorrServer cache plan FAILED: ${e.message}"
+            logger.warn(msg)
+            println(msg)
         }
     }
 }
