@@ -14,3 +14,8 @@ services:
       - WEB_DIR=/app/web
       - ADMIN_USERNAME=admin
       - ADMIN_PASSWORD=admin
+      # Lampac Gateway (optional)
+      # - LAMPAC_HOST=http://lampac:9118
+      # - LAMPAC_UID=avalon
+      # - LAMPAC_TOKEN=
+      # - LAMPAC_ACCOUNT_EMAIL=

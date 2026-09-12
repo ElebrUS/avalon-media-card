@@ -4,6 +4,7 @@ import kotlinx.coroutines.flow.flow
 import org.ensodai.avalonmediacard.contract.plugins.AvalonPlugin
 import org.ensodai.avalonmediacard.contract.plugins.PluginContext
 import org.ensodai.avalonmediacard.contract.plugins.PluginLogger
+import org.ensodai.avalonmediacard.plugins.lampac.data.network.LampacAccsdbCredentials
 import org.ensodai.avalonmediacard.plugins.lampac.data.network.LampacApiClient
 import org.ensodai.avalonmediacard.plugins.lampac.data.repository.LampacRepositoryImpl
 import org.ensodai.avalonmediacard.plugins.lampac.domain.usecase.GetLampacPlaylistUseCase
@@ -16,6 +17,10 @@ import org.ensodai.avalonmediacard.plugins.lampac.presentation.playback.LampacPl
  *
  * Provides access to 70+ online balancers, JacRed torrent search, and HLS streaming proxy
  * via local or remote Lampac NextGen instance for **Avalon Media Card**.
+ *
+ * Configure via env:
+ * - `LAMPAC_HOST` — Lampac base URL (default `http://localhost:9118`)
+ * - `LAMPAC_UID` / `LAMPAC_TOKEN` / `LAMPAC_ACCOUNT_EMAIL` — Accsdb identity
  *
  * @see AvalonPlugin
  * @see PluginContext
@@ -33,8 +38,20 @@ class LampacPlugin : AvalonPlugin {
         logger = context.logger
         logger.info("Initializing Lampac Gateway Adapter Plugin [v$version]")
 
+        val baseUrl = resolveBaseUrl()
+        val accsdb = LampacAccsdbCredentials.fromEnv()
+        logger.info("Lampac Gateway base URL: $baseUrl")
+        logger.info(
+            "Lampac Accsdb: " + when {
+                !accsdb.uid.isNullOrBlank() -> "uid configured"
+                !accsdb.token.isNullOrBlank() -> "token configured"
+                !accsdb.accountEmail.isNullOrBlank() -> "account_email configured"
+                else -> "disabled (no LAMPAC_UID / LAMPAC_TOKEN / LAMPAC_ACCOUNT_EMAIL)"
+            }
+        )
+
         // 1. Data Layer: Network Client & Repository
-        val apiClient = LampacApiClient(context.httpClient, logger)
+        val apiClient = LampacApiClient(context.httpClient, logger, baseUrl, accsdb)
         val repository = LampacRepositoryImpl(apiClient)
 
         // 2. Domain Layer: Use Cases
@@ -67,5 +84,17 @@ class LampacPlugin : AvalonPlugin {
         )
 
         logger.info("Lampac Gateway Adapter Plugin successfully registered and ready!")
+    }
+
+    /**
+     * Resolves Lampac base URL from env `LAMPAC_HOST`, otherwise default localhost.
+     */
+    private fun resolveBaseUrl(): String {
+        val fromEnv = System.getenv("LAMPAC_HOST")?.takeIf { it.isNotBlank() }
+        return (fromEnv ?: DEFAULT_BASE_URL).trimEnd('/')
+    }
+
+    companion object {
+        private const val DEFAULT_BASE_URL = "http://localhost:9118"
     }
 }

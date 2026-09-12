@@ -170,6 +170,68 @@ docker compose up -d
 
 ---
 
+### Step 1.5: Lampac + Accsdb (optional)
+
+The **lampac-adapter-plugin** talks to a [Lampac](https://github.com/lampac-nextgen/lampac) instance for online balancers. If Lampac has **Accsdb** enabled, Avalon must send an identity on every request.
+
+#### Lampac side (`init.conf`)
+
+1. Enable Accsdb and create a dedicated account for Avalon (personal plugin password / unic id):
+
+```json
+"accsdb": {
+  "enable": true,
+  "accounts": {
+    "avalon": "2040-10-17T00:00:00"
+  }
+}
+```
+
+Or via Lampac Admin → **Users** → Add user → set **ID** to `avalon` (any string you choose).
+
+2. Alternatively, use a shared password (then Avalon should send it as `account_email`):
+
+```json
+"accsdb": {
+  "enable": true,
+  "shared_passwd": "your_shared_secret"
+}
+```
+
+3. Restart Lampac after changing `init.conf`.
+
+> Tip: `http://<LAMPAC_IP>:9118/e/acb` shows Lampac’s own Accsdb setup hints.
+
+#### Avalon side (env)
+
+Set these on the Avalon server process / Docker Compose `environment`:
+
+| Variable | Required | Description |
+|---|---|---|
+| `LAMPAC_HOST` | recommended | Lampac base URL, e.g. `http://192.168.1.10:9118` (default `http://localhost:9118`) |
+| `LAMPAC_UID` | if Accsdb on | Accsdb account id / personal password (sent as `?uid=`) |
+| `LAMPAC_TOKEN` | optional | Sent as `?token=` |
+| `LAMPAC_ACCOUNT_EMAIL` | optional | Sent as `?account_email=` (also used with `shared_passwd`) |
+
+**Docker Compose example:**
+
+```yaml
+environment:
+  - LAMPAC_HOST=http://lampac:9118
+  - LAMPAC_UID=avalon
+```
+
+After restart, logs should contain:
+
+```text
+Lampac Gateway base URL: http://lampac:9118
+Lampac Accsdb: uid configured
+```
+
+If Accsdb is disabled on Lampac, leave `LAMPAC_UID` / `LAMPAC_TOKEN` / `LAMPAC_ACCOUNT_EMAIL` unset.
+
+---
+
 ### Step 2: Connect from Your Devices (Clients)
 
 You can watch media directly in your **Web Browser** at `http://<SERVER_IP>:8080`, or use native client apps for hardware-accelerated playback and TV remote navigation:

@@ -96,22 +96,13 @@ private suspend fun handleProxyRequest(
         baseTargetUrl
     }
 
-    // Резолвинг эффективных заголовков для защиты от Hotlink Protection (Rutube, VK и др.)
+    // Резолвинг эффективных заголовков для безопасного upstream-запроса
     val targetUri = runCatching { URI(targetUrl) }.getOrNull()
-    val targetHost = targetUri?.host?.lowercase() ?: ""
     val effectiveHeaders = customHeaders.toMutableMap()
 
     if (!effectiveHeaders.containsKey(HttpHeaders.Referrer) && !effectiveHeaders.containsKey("Referer")) {
-        if (targetHost.contains("rutube.ru") || targetHost.contains("rtbcdn.ru")) {
-            effectiveHeaders[HttpHeaders.Referrer] = "https://rutube.ru/"
-        } else if (targetUri != null && !targetUri.scheme.isNullOrBlank() && !targetUri.host.isNullOrBlank()) {
+        if (targetUri != null && !targetUri.scheme.isNullOrBlank() && !targetUri.host.isNullOrBlank()) {
             effectiveHeaders[HttpHeaders.Referrer] = "${targetUri.scheme}://${targetUri.host}/"
-        }
-    }
-
-    if (!effectiveHeaders.containsKey("Origin")) {
-        if (targetHost.contains("rutube.ru") || targetHost.contains("rtbcdn.ru")) {
-            effectiveHeaders["Origin"] = "https://rutube.ru"
         }
     }
 

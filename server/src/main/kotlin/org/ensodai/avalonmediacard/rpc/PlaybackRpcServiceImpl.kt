@@ -125,7 +125,12 @@ class PlaybackRpcServiceImpl(
                 ?: return StreamPlaybackResult.NoSourceBound("Серия не найдена в текущем источнике")
 
             val preparedStream = pluginManager.prepareStream(targetStream, userId)
-            val secureUrl = sanitizeAndWrapStreamUrl(preparedStream.url, userId, preparedStream.type)
+            val secureUrl = sanitizeAndWrapStreamUrl(
+                rawUrl = preparedStream.url,
+                userId = userId,
+                streamType = preparedStream.type,
+                streamHeaders = preparedStream.headers
+            )
 
             return StreamPlaybackResult.Ready(
                 streamUrl = secureUrl,
@@ -143,7 +148,12 @@ class PlaybackRpcServiceImpl(
         }
     }
 
-    private fun sanitizeAndWrapStreamUrl(rawUrl: String, userId: Uuid?, streamType: StreamType? = null): String {
+    private fun sanitizeAndWrapStreamUrl(
+        rawUrl: String,
+        userId: Uuid?,
+        streamType: StreamType? = null,
+        streamHeaders: Map<String, String> = emptyMap()
+    ): String {
         if (rawUrl.startsWith("/gst/")) {
             return rawUrl
         }
@@ -157,7 +167,7 @@ class PlaybackRpcServiceImpl(
                 val queryParams = parseQueryString(rawUrl.substringAfter("?"))
                 val encodedUrl = queryParams["url"] ?: return rawUrl
                 val decodedTarget = String(Base64.getUrlDecoder().decode(encodedUrl), Charsets.UTF_8)
-                val customHeaders = mutableMapOf<String, String>()
+                val customHeaders = streamHeaders.toMutableMap()
 
                 queryParams["referer"]?.let {
                     val dec = runCatching { String(Base64.getUrlDecoder().decode(it), Charsets.UTF_8) }.getOrDefault(it)
@@ -193,7 +203,8 @@ class PlaybackRpcServiceImpl(
             return streamTokenService.wrapUrl(
                 targetUrl = rawUrl,
                 userId = userId,
-                streamType = streamType
+                streamType = streamType,
+                headers = streamHeaders
             )
         }
 
